@@ -1,0 +1,36 @@
+[application]
+    name = "vandacare"
+    api_uri = "/api/v1"
+    mode = "debug"     # debug/release
+
+[log]    
+    level = "debug" 
+    encoding = "json"
+    output = "/Users/lewis/Project/log/vandacare.log"
+
+[cache]
+    host = "192.168.13.71:6379"
+    password = ""
+    db = 1
+    expiration = 3600
+    
+[web]
+    host = "127.0.0.1"
+    port = 8080
+
+[database]
+    host = "192.168.13.71"
+    port = 3306
+    user = "vanda"
+    password = "650211"
+    dbname = "vandacare"
+
+[queue]
+    host = "192.168.13.71"
+    port = 5672
+    user = "vanda"
+    password = "650211"
+    exchange = "vandacare"
+
+[auth]
+    secret = "vandacare"

@@ -1,0 +1,53 @@
+version: '3'
+ 
+services:
+    redis:
+        image: redis:6
+        command: redis-server /usr/local/etc/redis/redis.conf
+        container_name: redis
+        hostname: redis
+        ports:
+            - "6379:6379"
+        restart: always
+        volumes:
+            - ./config/redis.conf:/usr/local/etc/redis/redis.conf
+            - ./data/redis/data:/var/lib/redis
+    mysql:
+        image: mysql:8
+        container_name: mysql
+        hostname: mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: test
+            MYSQL_DATABASE: vandacare
+            MYSQL_USER: vanda
+            MYSQL_PASSWORD: 650211
+        ports:
+            - "3306:3306"
+        restart: always
+        volumes:
+            - ./data/mysql/data:/var/lib/mysql
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin
+        links:
+            - mysql
+        environment:
+            PMA_HOST: mysql
+            PMA_PORT: 3306
+            PMA_ARBITRARY: 1
+        restart: always
+        ports:
+            - "8081:80"
+    rabbitmq:
+        image: rabbitmq:3-management-alpine
+        hostname: rabbitmq
+        container_name: "rabbitmq"
+        restart: always
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        volumes:
+            - ./config/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+            - ./data/rabbitmq/data/:/var/lib/rabbitmq/
+            - ./data/rabbitmq/logs/:/var/log/rabbitmq/
