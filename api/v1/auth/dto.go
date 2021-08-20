@@ -1,6 +1,6 @@
 package auth
 
-import "vandacare.com/api/v1/user"
+import "wms.com/api/v1/user"
 
 type SigninRequest struct {
 	AuthType   int    `json:"auth_type" binding:"required,max=9,min=1"`

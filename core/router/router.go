@@ -1,14 +1,20 @@
 package router
 
 import (
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
 	"github.com/gin-gonic/gin"
-	"vandacare.com/core/config"
-	"vandacare.com/middleware"
+	"wms.com/core/config"
+	_ "wms.com/docs"
+	"wms.com/middleware"
 )
 
 func InitRouter() *gin.Engine {
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware())
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	return r
 }
 

@@ -3,7 +3,7 @@ package event
 import (
 	"fmt"
 
-	"vandacare.com/core/queue"
+	"wms.com/core/queue"
 )
 
 type Subscriber func(*queue.Conn)

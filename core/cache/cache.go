@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-redis/cache/v8"
 	"github.com/go-redis/redis/v8"
-	"vandacare.com/core/config"
-	"vandacare.com/core/log"
+	"wms.com/core/config"
+	"wms.com/core/log"
 )
 
 var (

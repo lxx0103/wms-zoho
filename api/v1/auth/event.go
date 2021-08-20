@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/streadway/amqp"
-	"vandacare.com/core/database"
-	"vandacare.com/core/queue"
+	"wms.com/core/database"
+	"wms.com/core/queue"
 )
 
 type NewAuthCreated struct {

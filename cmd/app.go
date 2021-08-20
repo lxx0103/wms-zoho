@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"vandacare.com/api/v1/auth"
-	"vandacare.com/api/v1/user"
-	"vandacare.com/core/cache"
-	"vandacare.com/core/config"
-	"vandacare.com/core/database"
-	"vandacare.com/core/event"
-	"vandacare.com/core/log"
-	"vandacare.com/core/router"
+	"wms.com/api/v1/auth"
+	"wms.com/api/v1/user"
+	"wms.com/core/cache"
+	"wms.com/core/config"
+	"wms.com/core/database"
+	"wms.com/core/event"
+	"wms.com/core/log"
+	"wms.com/core/router"
 )
 
 func Run() {

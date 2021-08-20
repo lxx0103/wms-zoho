@@ -5,7 +5,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"vandacare.com/core/config"
+	"wms.com/core/config"
 )
 
 func InitMySQL() *sqlx.DB {

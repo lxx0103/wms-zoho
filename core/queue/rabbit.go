@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/streadway/amqp"
-	"vandacare.com/core/config"
+	"wms.com/core/config"
 )
 
 type Conn struct {

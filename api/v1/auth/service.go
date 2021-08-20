@@ -4,8 +4,8 @@ import (
 	"errors"
 
 	"golang.org/x/crypto/bcrypt"
-	"vandacare.com/api/v1/user"
-	"vandacare.com/core/database"
+	"wms.com/api/v1/user"
+	"wms.com/core/database"
 )
 
 type authService struct {

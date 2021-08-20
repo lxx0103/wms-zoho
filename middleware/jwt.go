@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"vandacare.com/core/response"
-	"vandacare.com/service"
+	"wms.com/core/response"
+	"wms.com/service"
 )
 
 func AuthorizeJWT() gin.HandlerFunc {

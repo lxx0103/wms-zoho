@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/dgrijalva/jwt-go"
-	"vandacare.com/core/config"
+	"wms.com/core/config"
 )
 
 type CustomClaims struct {

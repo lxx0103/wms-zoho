@@ -1,7 +1,7 @@
 package user
 
 import (
-	"vandacare.com/core/database"
+	"wms.com/core/database"
 )
 
 type userService struct {

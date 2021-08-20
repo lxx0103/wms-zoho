@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"vandacare.com/core/queue"
-	"vandacare.com/core/response"
+	"wms.com/core/queue"
+	"wms.com/core/response"
 )
 
 func GetUserList(c *gin.Context) {
