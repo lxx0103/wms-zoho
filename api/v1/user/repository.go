@@ -18,37 +18,39 @@ func NewUserRepository(connection *sqlx.DB) UserRepository {
 }
 
 type UserRepository interface {
-	GetUserByID(id int64) (User, error)
-	CreateUser(info User) (int64, error)
+	GetUserByID(id int64) (UserProfile, error)
+	CreateUser(info UserProfile) (int64, error)
 	GetUserCount(filter UserFilter) (int, error)
-	GetUserList(filter UserFilter) ([]User, error)
+	GetUserList(filter UserFilter) ([]UserProfile, error)
 }
 
-func (r *userRepository) GetUserByID(id int64) (User, error) {
-	var user User
-	err := r.conn.Get(&user, "SELECT * FROM users WHERE id = ? ", id)
+func (r *userRepository) GetUserByID(id int64) (UserProfile, error) {
+	var user UserProfile
+	err := r.conn.Get(&user, "SELECT * FROM user_profiles WHERE id = ? ", id)
 	if err != nil {
-		return User{}, err
+		return UserProfile{}, err
 	}
 	return user, nil
 }
-func (r *userRepository) CreateUser(info User) (int64, error) {
+func (r *userRepository) CreateUser(info UserProfile) (int64, error) {
 	tx, err := r.conn.Begin()
 	if err != nil {
 		return 0, err
 	}
 	defer tx.Rollback()
 	result, err := tx.Exec(`
-		INSERT INTO users
+		INSERT INTO user_profiles
 		(
-			gender,
 			name,
 			email,
-			created_at,
-			updated_at
+			enabled,
+			created,
+			created_by,
+			updated,
+			updated_by
 		)
-		VALUES (?, ?, ?, ?, ?)
-	`, info.Gender, info.Name, info.Email, time.Now(), time.Now())
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, info.Name, info.Email, 1, time.Now(), "system", time.Now(), "system")
 	if err != nil {
 		return 0, err
 	}
@@ -71,7 +73,7 @@ func (r *userRepository) GetUserCount(filter UserFilter) (int, error) {
 	var count int
 	err := r.conn.Get(&count, `
 		SELECT count(1) as count 
-		FROM users 
+		FROM user_profiles 
 		WHERE `+strings.Join(where, " AND "), args...)
 	if err != nil {
 		return 0, err
@@ -79,7 +81,7 @@ func (r *userRepository) GetUserCount(filter UserFilter) (int, error) {
 	return count, nil
 }
 
-func (r *userRepository) GetUserList(filter UserFilter) ([]User, error) {
+func (r *userRepository) GetUserList(filter UserFilter) ([]UserProfile, error) {
 	where, args := []string{"1 = 1"}, []interface{}{}
 	if v := filter.Name; v != "" {
 		where, args = append(where, "name = ?"), append(args, v)
@@ -89,10 +91,10 @@ func (r *userRepository) GetUserList(filter UserFilter) ([]User, error) {
 	}
 	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
 	args = append(args, filter.PageSize)
-	var users []User
+	var users []UserProfile
 	err := r.conn.Select(&users, `
 		SELECT * 
-		FROM users 
+		FROM user_profiles 
 		WHERE `+strings.Join(where, " AND ")+`
 		LIMIT ?, ?
 	`, args...)

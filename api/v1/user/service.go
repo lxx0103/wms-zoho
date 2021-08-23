@@ -13,30 +13,30 @@ func NewUserService() UserService {
 
 // UserService represents a service for managing users.
 type UserService interface {
-	GetUserByID(int64) (User, error)
-	CreateNewUser(User) (User, error)
-	GetUserList(UserFilter) (int, []User, error)
+	GetUserByID(int64) (UserProfile, error)
+	CreateNewUser(UserProfile) (UserProfile, error)
+	GetUserList(UserFilter) (int, []UserProfile, error)
 }
 
-func (s *userService) GetUserByID(id int64) (User, error) {
+func (s *userService) GetUserByID(id int64) (UserProfile, error) {
 	db := database.InitMySQL()
 	repo := NewUserRepository(db)
 	user, err := repo.GetUserByID(id)
 	return user, err
 }
 
-func (s *userService) CreateNewUser(info User) (User, error) {
+func (s *userService) CreateNewUser(info UserProfile) (UserProfile, error) {
 	db := database.InitMySQL()
 	repo := NewUserRepository(db)
 	userID, err := repo.CreateUser(info)
 	if err != nil {
-		return User{}, err
+		return UserProfile{}, err
 	}
 	user, err := repo.GetUserByID(userID)
 	return user, err
 }
 
-func (s *userService) GetUserList(filter UserFilter) (int, []User, error) {
+func (s *userService) GetUserList(filter UserFilter) (int, []UserProfile, error) {
 	db := database.InitMySQL()
 	repo := NewUserRepository(db)
 	count, err := repo.GetUserCount(filter)

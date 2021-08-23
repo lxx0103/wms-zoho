@@ -16,19 +16,19 @@ func NewAuthService() AuthService {
 }
 
 type AuthService interface {
-	VerifyCredential(SigninRequest) (user.User, error)
+	VerifyCredential(SigninRequest) (user.UserProfile, error)
 	CreateAuth(SignupRequest) (int64, error)
 }
 
-func (s *authService) VerifyCredential(signinInfo SigninRequest) (user.User, error) {
+func (s *authService) VerifyCredential(signinInfo SigninRequest) (user.UserProfile, error) {
 	db := database.InitMySQL()
 	repo := NewAuthRepository(db)
 	authInfo, err := repo.GetCredential(signinInfo)
 	if err != nil {
-		return user.User{}, err
+		return user.UserProfile{}, err
 	}
 	if !checkPasswordHash(signinInfo.Credential, authInfo.Credential) {
-		return user.User{}, errors.New("CREDENTIAL ERROR")
+		return user.UserProfile{}, errors.New("CREDENTIAL ERROR")
 	}
 	userRepo := user.NewUserRepository(db)
 	userInfo, err := userRepo.GetUserByID(authInfo.UserID)

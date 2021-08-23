@@ -14,7 +14,6 @@ type NewAuthCreated struct {
 	AuthType   int    `json:"auth_type"`
 	Identifier string `json:"identifier"`
 	Credential string `json:"credential"`
-	Gender     int    `json:"gender"`
 	Name       string `json:"name"`
 	Email      string `json:"email"`
 }
@@ -38,8 +37,7 @@ func CreateUserProfile(d amqp.Delivery) bool {
 		fmt.Println(err)
 		return false
 	}
-	var userInfo User
-	userInfo.Gender = newAuthCreated.Gender
+	var userInfo UserProfile
 	userInfo.Name = newAuthCreated.Name
 	userInfo.Email = newAuthCreated.Email
 	db := database.InitMySQL()

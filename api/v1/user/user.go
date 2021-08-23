@@ -12,12 +12,12 @@ import (
 func GetUserList(c *gin.Context) {
 	var filter UserFilter
 	if err := c.ShouldBindJSON(&filter); err != nil {
-		response.ResponseError(c, 400, err)
+		response.ResponseError(c, "BindingError", err)
 	}
 	userService := NewUserService()
 	count, list, err := userService.GetUserList(filter)
 	if err != nil {
-		response.ResponseError(c, 400, err)
+		response.ResponseError(c, "DatabaseError", err)
 		return
 	}
 	response.ResponseList(c, filter.PageId, filter.PageSize, count, list)
@@ -32,21 +32,21 @@ func GetUserByID(c *gin.Context) {
 	userService := NewUserService()
 	user, err := userService.GetUserByID(uri.ID)
 	if err != nil {
-		response.ResponseError(c, 400, err)
+		response.ResponseError(c, "DatabaseError", err)
 		return
 	}
 	response.Response(c, user)
 }
 
 func NewUser(c *gin.Context) {
-	var q User
+	var q UserProfile
 	if err := c.ShouldBindJSON(&q); err != nil {
-		response.ResponseError(c, 100, err)
+		response.ResponseError(c, "BindingError", err)
 	}
 	userService := NewUserService()
 	user, err := userService.CreateNewUser(q)
 	if err != nil {
-		response.ResponseError(c, 100, err)
+		response.ResponseError(c, "DatabaseError", err)
 	}
 	rabbit, _ := queue.GetConn()
 	msg, _ := json.Marshal(user)

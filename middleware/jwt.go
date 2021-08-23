@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"errors"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"wms.com/core/response"
@@ -14,16 +13,17 @@ func AuthorizeJWT() gin.HandlerFunc {
 		const BEARER_SCHEMA = "Bearer "
 		authHeader := c.GetHeader("Authorization")
 		if len(authHeader) <= len(BEARER_SCHEMA) {
-			response.ResponseError(c, http.StatusUnauthorized, errors.New("NO AUTH HEADER"))
+			response.ResponseUnauthorized(c, "AuthError", errors.New("NO AUTH HEADER"))
+			return
 		}
 		tokenString := authHeader[len(BEARER_SCHEMA):]
 		if tokenString == "" {
-			response.ResponseError(c, http.StatusUnauthorized, errors.New("JWT AUTH ERROR"))
+			response.ResponseUnauthorized(c, "AuthError", errors.New("JWT AUTH ERROR"))
 			return
 		}
 		claims, err := service.JWTAuthService().ParseToken(tokenString)
 		if err != nil {
-			response.ResponseError(c, http.StatusUnauthorized, errors.New("JWT AUTH ERROR"))
+			response.ResponseUnauthorized(c, "AuthError", errors.New("JWT AUTH ERROR"))
 			return
 		}
 		c.Set("claims", claims)

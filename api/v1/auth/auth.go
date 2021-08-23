@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/json"
-	"net/http"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -19,8 +18,8 @@ import (
 // @version 1.0
 // @Accept application/json
 // @Produce application/json
-// @Param login_info body SigninRequest true "登录类型"
-// @Success 200 object SigninResponse 登录成功
+// @Param signin_info body SigninRequest true "登录类型"
+// @Success 200 object response.SuccessRes{data=SigninResponse} 登录成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Failure 401 object response.ErrorRes 登录失败
 // @Router /signin [POST]
@@ -28,14 +27,14 @@ func Signin(c *gin.Context) {
 	var signinInfo SigninRequest
 	err := c.ShouldBindJSON(&signinInfo)
 	if err != nil {
-		response.ResponseError(c, 400, err)
+		response.ResponseError(c, "BindingError", err)
 		return
 	}
 	authService := NewAuthService()
 	jwtServices := service.JWTAuthService()
 	authResult, err := authService.VerifyCredential(signinInfo)
 	if err != nil {
-		response.ResponseError(c, http.StatusUnauthorized, err)
+		response.ResponseUnauthorized(c, "AuthError", err)
 		return
 	}
 	claims := service.CustomClaims{
@@ -56,17 +55,28 @@ func Signin(c *gin.Context) {
 	response.Response(c, res)
 }
 
+// @Summary 登录
+// @Id 2
+// @Tags 用户权限
+// @Summary 用户注册
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param signup_info body SignupRequest true "登录类型"
+// @Success 200 object response.SuccessRes{data=int} 注册成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /signup [POST]
 func Signup(c *gin.Context) {
 	var signupInfo SignupRequest
 	err := c.ShouldBindJSON(&signupInfo)
 	if err != nil {
-		response.ResponseError(c, 400, err)
+		response.ResponseError(c, "BindingError", err)
 		return
 	}
 	authService := NewAuthService()
 	authID, err := authService.CreateAuth(signupInfo)
 	if err != nil {
-		response.ResponseError(c, 400, err)
+		response.ResponseError(c, "DatabaseError", err)
 		return
 	}
 	var newEvent NewAuthCreated
@@ -74,15 +84,13 @@ func Signup(c *gin.Context) {
 	newEvent.AuthType = signupInfo.AuthType
 	newEvent.Credential = signupInfo.Credential
 	newEvent.Identifier = signupInfo.Identifier
-	newEvent.Gender = signupInfo.Gender
 	newEvent.Name = signupInfo.Name
 	newEvent.Email = signupInfo.Email
-
 	rabbit, _ := queue.GetConn()
 	msg, _ := json.Marshal(newEvent)
 	err = rabbit.Publish("NewAuthCreated", msg)
 	if err != nil {
-		response.ResponseError(c, 400, err)
+		response.ResponseError(c, "PublishError", err)
 		return
 	}
 	response.Response(c, authID)

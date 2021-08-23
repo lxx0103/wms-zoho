@@ -41,11 +41,14 @@ func (r *authRepository) CreateAuth(signupInfo UserAuth) (int64, error) {
 			auth_type,
 			identifier,
 			credential,
-			created_at,
-			updated_at
+			enabled,
+			created,
+			created_by,
+			updated,
+			updated_by
 		)
-		VALUES (?, ?, ?, ?, ?)
-	`, signupInfo.AuthType, signupInfo.Identifier, signupInfo.Credential, time.Now(), time.Now())
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, signupInfo.AuthType, signupInfo.Identifier, signupInfo.Credential, 1, time.Now(), "system", time.Now(), "system")
 	if err != nil {
 		return 0, err
 	}

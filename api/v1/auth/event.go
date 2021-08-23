@@ -14,7 +14,6 @@ type NewAuthCreated struct {
 	AuthType   int    `json:"auth_type"`
 	Identifier string `json:"identifier"`
 	Credential string `json:"credential"`
-	Gender     int    `json:"gender"`
 	Name       string `json:"name"`
 	Email      string `json:"email"`
 }
