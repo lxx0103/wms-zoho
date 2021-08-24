@@ -16,7 +16,7 @@ func Run() {
 	config.LoadConfig("config.toml")
 	log.ConfigLogger()
 	cache.ConfigCache()
-	database.InitMySQL()
+	database.ConfigMysql()
 	event.Subscribe(user.Subscribe, auth.Subscribe)
 	r := router.InitRouter()
 	router.InitPublicRouter(r, auth.Routers)

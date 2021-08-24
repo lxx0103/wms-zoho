@@ -13,10 +13,21 @@ func NewSettingService() SettingService {
 
 // SettingService represents a service for managing settings.
 type SettingService interface {
+	//Shelf Management
 	GetShelfByID(int64) (Shelf, error)
 	NewShelf(ShelfNew) (Shelf, error)
 	GetShelfList(ShelfFilter) (int, []Shelf, error)
 	UpdateShelf(int64, ShelfNew) (Shelf, error)
+	//Location Management
+	GetLocationByID(int64) (Location, error)
+	NewLocation(LocationNew) (Location, error)
+	GetLocationList(LocationFilter) (int, []Location, error)
+	UpdateLocation(int64, LocationNew) (Location, error)
+	//Barcode Management
+	GetBarcodeByID(int64) (Barcode, error)
+	NewBarcode(BarcodeNew) (Barcode, error)
+	GetBarcodeList(BarcodeFilter) (int, []Barcode, error)
+	UpdateBarcode(int64, BarcodeNew) (Barcode, error)
 }
 
 func (s *settingService) GetShelfByID(id int64) (Shelf, error) {
@@ -60,4 +71,90 @@ func (s *settingService) UpdateShelf(shelfID int64, info ShelfNew) (Shelf, error
 	}
 	shelf, err := repo.GetShelfByID(shelfID)
 	return shelf, err
+}
+
+func (s *settingService) GetLocationByID(id int64) (Location, error) {
+	db := database.InitMySQL()
+	repo := NewSettingRepository(db)
+	location, err := repo.GetLocationByID(id)
+	return location, err
+}
+
+func (s *settingService) NewLocation(info LocationNew) (Location, error) {
+	db := database.InitMySQL()
+	repo := NewSettingRepository(db)
+	locationID, err := repo.CreateLocation(info)
+	if err != nil {
+		return Location{}, err
+	}
+	location, err := repo.GetLocationByID(locationID)
+	return location, err
+}
+
+func (s *settingService) GetLocationList(filter LocationFilter) (int, []Location, error) {
+	db := database.InitMySQL()
+	repo := NewSettingRepository(db)
+	count, err := repo.GetLocationCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := repo.GetLocationList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *settingService) UpdateLocation(locationID int64, info LocationNew) (Location, error) {
+	db := database.InitMySQL()
+	repo := NewSettingRepository(db)
+	_, err := repo.UpdateLocation(locationID, info)
+	if err != nil {
+		return Location{}, err
+	}
+	location, err := repo.GetLocationByID(locationID)
+	return location, err
+}
+
+func (s *settingService) GetBarcodeByID(id int64) (Barcode, error) {
+	db := database.InitMySQL()
+	repo := NewSettingRepository(db)
+	barcode, err := repo.GetBarcodeByID(id)
+	return barcode, err
+}
+
+func (s *settingService) NewBarcode(info BarcodeNew) (Barcode, error) {
+	db := database.InitMySQL()
+	repo := NewSettingRepository(db)
+	barcodeID, err := repo.CreateBarcode(info)
+	if err != nil {
+		return Barcode{}, err
+	}
+	barcode, err := repo.GetBarcodeByID(barcodeID)
+	return barcode, err
+}
+
+func (s *settingService) GetBarcodeList(filter BarcodeFilter) (int, []Barcode, error) {
+	db := database.InitMySQL()
+	repo := NewSettingRepository(db)
+	count, err := repo.GetBarcodeCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := repo.GetBarcodeList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *settingService) UpdateBarcode(barcodeID int64, info BarcodeNew) (Barcode, error) {
+	db := database.InitMySQL()
+	repo := NewSettingRepository(db)
+	_, err := repo.UpdateBarcode(barcodeID, info)
+	if err != nil {
+		return Barcode{}, err
+	}
+	barcode, err := repo.GetBarcodeByID(barcodeID)
+	return barcode, err
 }
