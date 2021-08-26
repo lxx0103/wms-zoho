@@ -16,7 +16,7 @@ func ConfigMysql() {
 	password := config.ReadConfig("database.password")
 	port := config.ReadConfig("database.port")
 	dbname := config.ReadConfig("database.dbname")
-	dsn := user + ":" + password + "@tcp(" + host + ":" + port + ")/" + dbname + "?parseTime=true"
+	dsn := user + ":" + password + "@tcp(" + host + ":" + port + ")/" + dbname + "?parseTime=true&loc=Local"
 	mysqldb, err := sqlx.Connect("mysql", dsn)
 	if err != nil {
 		log.Fatal(err.Error())

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"wms.com/api/v1/auth"
+	"wms.com/api/v1/inventory"
 	"wms.com/api/v1/setting"
 	"wms.com/api/v1/user"
 	"wms.com/core/cache"
@@ -20,6 +21,6 @@ func Run() {
 	event.Subscribe(user.Subscribe, auth.Subscribe)
 	r := router.InitRouter()
 	router.InitPublicRouter(r, auth.Routers)
-	router.InitAuthRouter(r, user.Routers, setting.Routers)
+	router.InitAuthRouter(r, user.Routers, setting.Routers, inventory.Routers)
 	router.RunServer(r)
 }
