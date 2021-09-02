@@ -1,0 +1,822 @@
+basePath: /
+definitions:
+  auth.SigninRequest:
+    properties:
+      auth_type:
+        type: integer
+      credential:
+        type: string
+      identifier:
+        type: string
+    required:
+    - auth_type
+    - credential
+    - identifier
+    type: object
+  auth.SigninResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/user.UserProfile'
+    type: object
+  auth.SignupRequest:
+    properties:
+      auth_type:
+        type: integer
+      credential:
+        type: string
+      email:
+        type: string
+      identifier:
+        type: string
+      name:
+        type: string
+    required:
+    - auth_type
+    - credential
+    - email
+    - identifier
+    - name
+    type: object
+  inventory.Item:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      sku:
+        type: string
+      stock:
+        type: integer
+      stock_available:
+        type: string
+      unit:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
+      zoho_item_id:
+        type: string
+    type: object
+  response.ErrorRes:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+  response.ListRes:
+    properties:
+      count:
+        type: integer
+      data:
+        type: object
+      page_id:
+        type: integer
+      page_size:
+        type: integer
+    type: object
+  response.SuccessRes:
+    properties:
+      data:
+        type: object
+    type: object
+  setting.Barcode:
+    properties:
+      code:
+        type: string
+      created:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: string
+      id:
+        type: integer
+      quantity:
+        type: integer
+      sku:
+        type: string
+      unit:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  setting.BarcodeNew:
+    properties:
+      code:
+        type: string
+      enabled:
+        type: integer
+      quantity:
+        type: integer
+      sku:
+        type: string
+      unit:
+        type: string
+    required:
+    - code
+    - enabled
+    - quantity
+    - sku
+    - unit
+    type: object
+  setting.Location:
+    properties:
+      capacity:
+        type: integer
+      code:
+        type: string
+      created:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: string
+      id:
+        type: integer
+      level:
+        type: integer
+      shelf_id:
+        type: integer
+      sku:
+        type: string
+      unit:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  setting.LocationNew:
+    properties:
+      capacity:
+        type: integer
+      code:
+        type: string
+      enabled:
+        type: integer
+      level:
+        type: integer
+      shelf_id:
+        type: integer
+      sku:
+        type: string
+      unit:
+        type: string
+    required:
+    - capacity
+    - code
+    - enabled
+    - level
+    - shelf_id
+    - sku
+    - unit
+    type: object
+  setting.Shelf:
+    properties:
+      code:
+        type: string
+      created:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: string
+      id:
+        type: integer
+      level:
+        type: integer
+      location:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  setting.ShelfNew:
+    properties:
+      code:
+        type: string
+      enabled:
+        type: integer
+      level:
+        type: integer
+      location:
+        type: string
+    required:
+    - code
+    - enabled
+    - level
+    - location
+    type: object
+  user.UserProfile:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      email:
+        type: string
+      enabled:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      role_id:
+        type: integer
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+host: 0.0.0.0:8080
+info:
+  contact:
+    email: lxx0103@yahoo.com
+    name: Lewis
+  description: API for WMS.
+  title: WMS API
+  version: "1.0"
+paths:
+  /barcodes:
+    get:
+      consumes:
+      - application/json
+      operationId: "11"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 条码编码
+        in: query
+        name: code
+        type: string
+      - description: 条码位置
+        in: query
+        name: sku
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/setting.Barcode'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 条码列表
+      tags:
+      - 条码管理
+    post:
+      consumes:
+      - application/json
+      operationId: "12"
+      parameters:
+      - description: 条码信息
+        in: body
+        name: barcode_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.BarcodeNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.Barcode'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建条码
+      tags:
+      - 条码管理
+  /barcodes/:id:
+    get:
+      consumes:
+      - application/json
+      operationId: "13"
+      parameters:
+      - description: 条码ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.Barcode'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取条码
+      tags:
+      - 条码管理
+    put:
+      consumes:
+      - application/json
+      operationId: "14"
+      parameters:
+      - description: 条码ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 条码信息
+        in: body
+        name: barcode_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.BarcodeNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.Barcode'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新条码
+      tags:
+      - 条码管理
+  /items:
+    get:
+      consumes:
+      - application/json
+      operationId: "15"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 商品SKU
+        in: query
+        name: sku
+        type: string
+      - description: 商品名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/inventory.Item'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 商品列表
+      tags:
+      - 商品管理
+  /items/:id:
+    get:
+      consumes:
+      - application/json
+      operationId: "16"
+      parameters:
+      - description: 商品ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/inventory.Item'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取商品
+      tags:
+      - 商品管理
+  /locations:
+    get:
+      consumes:
+      - application/json
+      operationId: "7"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 货位编码
+        in: query
+        name: code
+        type: string
+      - description: 货位层
+        in: query
+        name: level
+        type: string
+      - description: 货架id
+        in: query
+        name: shelf_id
+        type: string
+      - description: SKU
+        in: query
+        name: sku
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/setting.Location'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 货位列表
+      tags:
+      - 货位管理
+    post:
+      consumes:
+      - application/json
+      operationId: "8"
+      parameters:
+      - description: 货位信息
+        in: body
+        name: location_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.LocationNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.Location'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建货位
+      tags:
+      - 货位管理
+  /locations/:id:
+    get:
+      consumes:
+      - application/json
+      operationId: "9"
+      parameters:
+      - description: 货位ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.Location'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取货位
+      tags:
+      - 货位管理
+    put:
+      consumes:
+      - application/json
+      operationId: "10"
+      parameters:
+      - description: 货位ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 货位信息
+        in: body
+        name: location_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.LocationNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.Location'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新货位
+      tags:
+      - 货位管理
+  /shelves:
+    get:
+      consumes:
+      - application/json
+      operationId: "3"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 货架编码
+        in: query
+        name: code
+        type: string
+      - description: 货架位置
+        in: query
+        name: location
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/setting.Shelf'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 货架列表
+      tags:
+      - 货架管理
+    post:
+      consumes:
+      - application/json
+      operationId: "4"
+      parameters:
+      - description: 货架信息
+        in: body
+        name: shelf_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.ShelfNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.Shelf'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建货架
+      tags:
+      - 货架管理
+  /shelves/:id:
+    get:
+      consumes:
+      - application/json
+      operationId: "5"
+      parameters:
+      - description: 货架ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.Shelf'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取货架
+      tags:
+      - 货架管理
+    put:
+      consumes:
+      - application/json
+      operationId: "6"
+      parameters:
+      - description: 货架ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 货架信息
+        in: body
+        name: shelf_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.ShelfNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.Shelf'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新货架
+      tags:
+      - 货架管理
+  /signin:
+    post:
+      consumes:
+      - application/json
+      operationId: "1"
+      parameters:
+      - description: 登录类型
+        in: body
+        name: signin_info
+        required: true
+        schema:
+          $ref: '#/definitions/auth.SigninRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.SigninResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 用户登录获取token
+      tags:
+      - 用户权限
+  /signup:
+    post:
+      consumes:
+      - application/json
+      operationId: "2"
+      parameters:
+      - description: 登录类型
+        in: body
+        name: signup_info
+        required: true
+        schema:
+          $ref: '#/definitions/auth.SignupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: integer
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 用户注册
+      tags:
+      - 用户权限
+swagger: "2.0"
