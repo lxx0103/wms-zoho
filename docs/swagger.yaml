@@ -66,6 +66,104 @@ definitions:
       zoho_item_id:
         type: string
     type: object
+  inventory.PODetail:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/inventory.PurchaseOrderItem'
+        type: array
+      po:
+        $ref: '#/definitions/inventory.PurchaseOrder'
+    type: object
+  inventory.PurchaseOrder:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: string
+      expected_delivery_date:
+        type: string
+      id:
+        type: integer
+      po_date:
+        type: string
+      po_number:
+        type: string
+      reference_number:
+        type: string
+      status:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
+      vendor_id:
+        type: string
+      vendor_name:
+        type: string
+      zoho_po_id:
+        type: string
+    type: object
+  inventory.PurchaseOrderItem:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: string
+      id:
+        type: integer
+      item_id:
+        type: integer
+      name:
+        type: string
+      po_id:
+        type: integer
+      quantity:
+        type: integer
+      quantity_received:
+        type: integer
+      sku:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
+      zoho_item_id:
+        type: string
+    type: object
+  inventory.ReceiveNew:
+    properties:
+      barcode:
+        type: string
+      po_id:
+        type: integer
+      quantity:
+        type: integer
+    required:
+    - barcode
+    - po_id
+    - quantity
+    type: object
+  inventory.StockInRes:
+    properties:
+      location:
+        items:
+          $ref: '#/definitions/inventory.StoctInLoc'
+        type: array
+    type: object
+  inventory.StoctInLoc:
+    properties:
+      code:
+        type: string
+      quantity:
+        type: integer
+      shelf_id:
+        type: integer
+    type: object
   response.ErrorRes:
     properties:
       code:
@@ -133,6 +231,8 @@ definitions:
     type: object
   setting.Location:
     properties:
+      available:
+        type: integer
       capacity:
         type: integer
       code:
@@ -146,6 +246,8 @@ definitions:
       id:
         type: integer
       level:
+        type: integer
+      quantity:
         type: integer
       shelf_id:
         type: integer
@@ -167,6 +269,8 @@ definitions:
       enabled:
         type: integer
       level:
+        type: integer
+      quantity:
         type: integer
       shelf_id:
         type: integer
@@ -613,6 +717,112 @@ paths:
       summary: 根据ID更新货位
       tags:
       - 货位管理
+  /purchaseorders:
+    get:
+      consumes:
+      - application/json
+      operationId: "17"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 采购订单编码
+        in: query
+        name: po_number
+        type: string
+      - description: 供应商名称
+        in: query
+        name: vendor_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/inventory.PurchaseOrder'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 采购单列表
+      tags:
+      - 采购单管理
+  /purchaseorders/:id:
+    get:
+      consumes:
+      - application/json
+      operationId: "18"
+      parameters:
+      - description: 采购订单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/inventory.PODetail'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取采购单
+      tags:
+      - 采购单管理
+  /receives:
+    post:
+      consumes:
+      - application/json
+      operationId: "19"
+      parameters:
+      - description: 收货单信息
+        in: body
+        name: receive_info
+        required: true
+        schema:
+          $ref: '#/definitions/inventory.ReceiveNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/inventory.StockInRes'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 创建新收货单
+      tags:
+      - 商品管理
   /shelves:
     get:
       consumes:

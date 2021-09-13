@@ -31,13 +31,15 @@ type SettingRepository interface {
 	GetLocationCount(filter LocationFilter) (int, error)
 	GetLocationList(filter LocationFilter) ([]Location, error)
 	UpdateLocation(id int64, info LocationNew) (int64, error)
+	GetLocationBySKU(sku string) (*[]Location, error)
 
-	//Location Management
+	//Barcode Management
 	GetBarcodeByID(id int64) (Barcode, error)
 	CreateBarcode(info BarcodeNew) (int64, error)
 	GetBarcodeCount(filter BarcodeFilter) (int, error)
 	GetBarcodeList(filter BarcodeFilter) ([]Barcode, error)
 	UpdateBarcode(id int64, info BarcodeNew) (int64, error)
+	GetBarcodeByCode(string) (*Barcode, error)
 }
 
 func (r *settingRepository) GetShelfByID(id int64) (Shelf, error) {
@@ -170,6 +172,8 @@ func (r *settingRepository) CreateLocation(info LocationNew) (int64, error) {
 			shelf_id,
 			sku,
 			capacity,
+			quantity,
+			available,
 			unit,
 			enabled,
 			created,
@@ -177,8 +181,8 @@ func (r *settingRepository) CreateLocation(info LocationNew) (int64, error) {
 			updated,
 			updated_by
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.Code, info.Level, info.ShelfID, info.SKU, info.Capacity, info.Unit, info.Enabled, time.Now(), info.User, time.Now(), info.User)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.Code, info.Level, info.ShelfID, info.SKU, info.Capacity, info.Quantity, info.Capacity-info.Quantity, info.Unit, info.Enabled, time.Now(), info.User, time.Now(), info.User)
 	if err != nil {
 		return 0, err
 	}
@@ -244,6 +248,24 @@ func (r *settingRepository) GetLocationList(filter LocationFilter) ([]Location, 
 	return locations, nil
 }
 
+func (r *settingRepository) GetLocationBySKU(sku string) (*[]Location, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	where, args = append(where, "sku = ?"), append(args, sku)
+
+	var locations []Location
+	err := r.conn.Select(&locations, `
+		SELECT * 
+		FROM s_locations 
+		WHERE `+strings.Join(where, " AND ")+`
+		AND available > 0
+		ORDER BY available ASC
+	`, args...)
+	if err != nil {
+		return nil, err
+	}
+	return &locations, nil
+}
+
 func (r *settingRepository) UpdateLocation(id int64, info LocationNew) (int64, error) {
 	tx, err := r.conn.Begin()
 	if err != nil {
@@ -257,12 +279,14 @@ func (r *settingRepository) UpdateLocation(id int64, info LocationNew) (int64, e
 		shelf_id = ?,
 		sku = ?,
 		capacity = ?,
+		quantity = ?,
+		available = ?, 
 		unit = ?,
 		enabled = ?,
 		updated = ?,
 		updated_by = ? 
 		WHERE id = ?
-	`, info.Code, info.Level, info.ShelfID, info.SKU, info.Capacity, info.Unit, info.Enabled, time.Now(), info.User, id)
+	`, info.Code, info.Level, info.ShelfID, info.SKU, info.Capacity, info.Quantity, info.Capacity-info.Quantity, info.Unit, info.Enabled, time.Now(), info.User, id)
 	if err != nil {
 		return 0, err
 	}
@@ -382,4 +406,13 @@ func (r *settingRepository) UpdateBarcode(barcodeID int64, info BarcodeNew) (int
 	}
 	tx.Commit()
 	return id, nil
+}
+
+func (r *settingRepository) GetBarcodeByCode(code string) (*Barcode, error) {
+	var barcode Barcode
+	err := r.conn.Get(&barcode, "SELECT * FROM s_barcodes WHERE code = ? ", code)
+	if err != nil {
+		return nil, err
+	}
+	return &barcode, nil
 }

@@ -23,11 +23,13 @@ type SettingService interface {
 	NewLocation(LocationNew) (Location, error)
 	GetLocationList(LocationFilter) (int, []Location, error)
 	UpdateLocation(int64, LocationNew) (Location, error)
+	GetLocationBySKU(string) (*[]Location, error)
 	//Barcode Management
 	GetBarcodeByID(int64) (Barcode, error)
 	NewBarcode(BarcodeNew) (Barcode, error)
 	GetBarcodeList(BarcodeFilter) (int, []Barcode, error)
 	UpdateBarcode(int64, BarcodeNew) (Barcode, error)
+	GetBarcodeByCode(string) (*Barcode, error)
 }
 
 func (s *settingService) GetShelfByID(id int64) (Shelf, error) {
@@ -116,6 +118,13 @@ func (s *settingService) UpdateLocation(locationID int64, info LocationNew) (Loc
 	return location, err
 }
 
+func (s *settingService) GetLocationBySKU(sku string) (*[]Location, error) {
+	db := database.InitMySQL()
+	repo := NewSettingRepository(db)
+	location, err := repo.GetLocationBySKU(sku)
+	return location, err
+}
+
 func (s *settingService) GetBarcodeByID(id int64) (Barcode, error) {
 	db := database.InitMySQL()
 	repo := NewSettingRepository(db)
@@ -156,5 +165,12 @@ func (s *settingService) UpdateBarcode(barcodeID int64, info BarcodeNew) (Barcod
 		return Barcode{}, err
 	}
 	barcode, err := repo.GetBarcodeByID(barcodeID)
+	return barcode, err
+}
+
+func (s *settingService) GetBarcodeByCode(code string) (*Barcode, error) {
+	db := database.InitMySQL()
+	repo := NewSettingRepository(db)
+	barcode, err := repo.GetBarcodeByCode(code)
 	return barcode, err
 }

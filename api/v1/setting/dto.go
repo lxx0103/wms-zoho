@@ -34,6 +34,7 @@ type LocationNew struct {
 	ShelfID  int64  `json:"shelf_id" binding:"required,min=1"`
 	SKU      string `json:"sku" binding:"required,min=1,max=64"`
 	Capacity int    `json:"capacity" binding:"required,min=1"`
+	Quantity int    `json:"quantity" binding:"omitempty"`
 	Unit     string `json:"unit" binding:"required,min=1,max=64"`
 	Enabled  int    `json:"enabled" binding:"required,oneof=1 2"`
 	User     string `json:"user" swaggerignore:"true"`
