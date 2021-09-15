@@ -1,11 +1,14 @@
 package inventory
 
 import (
+	"encoding/json"
 	"errors"
 
 	"github.com/gin-gonic/gin"
 	"wms.com/api/v1/setting"
+	"wms.com/core/queue"
 	"wms.com/core/response"
+	"wms.com/service"
 )
 
 // @Summary 商品列表
@@ -73,6 +76,7 @@ func GetItemByID(c *gin.Context) {
 // @Param page_size query int true "每页行数（5/10/15/20）"
 // @Param po_number query string false "采购订单编码"
 // @Param vendor_name query string false "供应商名称"
+// @Param receive_date query string false "预计到货日期"
 // @Success 200 object response.ListRes{data=[]PurchaseOrder} 成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /purchaseorders [GET]
@@ -146,6 +150,8 @@ func NewReceive(c *gin.Context) {
 		response.ResponseError(c, "BindingError", err)
 		return
 	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+
 	settingService := setting.NewSettingService()
 	barcode, err := settingService.GetBarcodeByCode(receive.Barcode)
 	if err != nil {
@@ -185,11 +191,26 @@ func NewReceive(c *gin.Context) {
 		response.ResponseError(c, "LocationError", errors.New("NOT ENOUGH SPACE TO STORE THE ITEMS"))
 		return
 	}
+	item, err := inventoryService.GetItemBySKU(barcode.SKU)
+	if err != nil {
+		response.ResponseError(c, "ItemError", err)
+		return
+	}
+	rabbit, _ := queue.GetConn()
 	var res StockInRes
 	for k := 0; k < len(*locations); k++ {
+		shelf, err := settingService.GetShelfByID((*locations)[k].ShelfID)
+		if err != nil {
+			response.ResponseError(c, "ShelfError", err)
+			return
+		}
 		var toStore StoctInLoc
-		toStore.Code = (*locations)[k].Code
-		toStore.ShelfID = (*locations)[k].ShelfID
+		toStore.LocationCode = (*locations)[k].Code
+		toStore.LocationLevel = (*locations)[k].Level
+		toStore.ShelfCode = shelf.Code
+		toStore.ShelfLocation = shelf.Location
+		toStore.ItemName = item.Name
+		toStore.SKU = item.SKU
 		if (*locations)[k].Available >= toReceive {
 			toStore.Quantity = toReceive
 			res.Location = append(res.Location, toStore)
@@ -197,6 +218,45 @@ func NewReceive(c *gin.Context) {
 		}
 		toStore.Quantity = (*locations)[k].Available
 		res.Location = append(res.Location, toStore)
+	}
+	for l := 0; l < len(res.Location); l++ {
+		//stock in
+		var locationUpdateInfo setting.UpdateLocationStock
+		locationUpdateInfo.Code = res.Location[l].LocationCode
+		locationUpdateInfo.Quantity = res.Location[l].Quantity
+		locationUpdateInfo.User = claims.Username
+		_, err := settingService.UpdateLocationStock(locationUpdateInfo)
+		if err != nil {
+			response.ResponseError(c, "UpdateLocationError", err)
+			return
+		}
+		//Update PO
+		var poUpdateInfo POItemUpdate
+		poUpdateInfo.POID = receive.POID
+		poUpdateInfo.Quantity = res.Location[l].Quantity
+		poUpdateInfo.SKU = res.Location[l].SKU
+		poUpdateInfo.User = claims.Username
+		_, err = inventoryService.UpdatePOItem(poUpdateInfo)
+		if err != nil {
+			response.ResponseError(c, "UpdateLocationError", err)
+			return
+		}
+		var newEvent NewReceiveCreated
+		newEvent.POID = receive.POID
+		newEvent.SKU = barcode.SKU
+		newEvent.ItemName = item.Name
+		newEvent.Quantity = res.Location[l].Quantity
+		newEvent.ShelfCode = res.Location[l].ShelfCode
+		newEvent.ShelfLocation = res.Location[l].ShelfLocation
+		newEvent.LocationCode = res.Location[l].LocationCode
+		newEvent.LocationLevel = res.Location[l].LocationLevel
+		newEvent.User = claims.Username
+		msg, _ := json.Marshal(newEvent)
+		err = rabbit.Publish("NewReceiveCreated", msg)
+		if err != nil {
+			response.ResponseError(c, "PublishError", err)
+			return
+		}
 	}
 	response.Response(c, res)
 }

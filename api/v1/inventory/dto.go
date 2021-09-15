@@ -12,10 +12,11 @@ type ItemID struct {
 }
 
 type PurchaseOrderFilter struct {
-	PONumber   string `form:"po_number" binding:"omitempty,max=64,min=1"`
-	VendorName string `form:"vendor_name" binding:"omitempty,max=64,min=1"`
-	PageId     int    `form:"page_id" binding:"required,min=1"`
-	PageSize   int    `form:"page_size" binding:"required,oneof=3 5 10"`
+	PONumber    string `form:"po_number" binding:"omitempty,max=64,min=1"`
+	VendorName  string `form:"vendor_name" binding:"omitempty,max=64,min=1"`
+	ReceiveDate string `form:"receive_date" binding:"omitempty,datetime=2006-01-02"`
+	PageId      int    `form:"page_id" binding:"required,min=1"`
+	PageSize    int    `form:"page_size" binding:"required,oneof=3 5 10"`
 }
 
 type PurchaseOrderID struct {
@@ -43,7 +44,29 @@ type StockInRes struct {
 }
 
 type StoctInLoc struct {
-	ShelfID  int64  `json:"shelf_id"`
-	Code     string `json:"code"`
+	SKU           string `json:"sku"`
+	ItemName      string `json:"item_name"`
+	ShelfCode     string `json:"shelf_code"`
+	ShelfLocation string `json:"shelf_location"`
+	LocationCode  string `json:"location_code"`
+	LocationLevel int64  `json:"location_level"`
+	Quantity      int64  `json:"quantity"`
+}
+
+type TransactionNew struct {
+	POID          int64  `json:"po_id"`
+	ItemName      string `json:"item_name"`
+	SKU           string `json:"sku"`
+	Quantity      int64  `json:"quantity"`
+	ShelfCode     string `json:"shelf_code"`
+	ShelfLocation string `json:"shelf_location"`
+	LocationCode  string `json:"location_code"`
+	User          string `json:"user"`
+}
+
+type POItemUpdate struct {
+	POID     int64  `json:"po_id"`
 	Quantity int64  `json:"quantity"`
+	SKU      string `json:"sku"`
+	User     string `json:"user"`
 }

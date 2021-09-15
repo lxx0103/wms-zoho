@@ -15,10 +15,12 @@ func NewInventoryService() InventoryService {
 type InventoryService interface {
 	//Item Management
 	GetItemByID(int64) (Item, error)
+	GetItemBySKU(string) (Item, error)
 	GetItemList(ItemFilter) (int, []Item, error)
 	GetPurchaseOrderByID(int64) (*PurchaseOrder, error)
 	GetPurchaseOrderList(PurchaseOrderFilter) (int, []PurchaseOrder, error)
 	FilterPOItem(FilterPOItem) (*[]PurchaseOrderItem, error)
+	UpdatePOItem(POItemUpdate) (int64, error)
 }
 
 func (s *inventoryService) GetItemByID(id int64) (Item, error) {
@@ -28,6 +30,12 @@ func (s *inventoryService) GetItemByID(id int64) (Item, error) {
 	return item, err
 }
 
+func (s *inventoryService) GetItemBySKU(sku string) (Item, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	item, err := repo.GetItemBySKU(sku)
+	return item, err
+}
 func (s *inventoryService) GetItemList(filter ItemFilter) (int, []Item, error) {
 	db := database.InitMySQL()
 	repo := NewInventoryRepository(db)
@@ -68,4 +76,11 @@ func (s *inventoryService) FilterPOItem(filter FilterPOItem) (*[]PurchaseOrderIt
 	repo := NewInventoryRepository(db)
 	items, err := repo.FilterPOItem(filter)
 	return items, err
+}
+
+func (s *inventoryService) UpdatePOItem(info POItemUpdate) (int64, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	affected, err := repo.UpdatePOItem(info)
+	return affected, err
 }

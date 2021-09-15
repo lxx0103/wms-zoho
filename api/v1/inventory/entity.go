@@ -49,3 +49,19 @@ type PurchaseOrderItem struct {
 	Updated          time.Time `db:"updated" json:"updated"`
 	UpdatedBy        string    `db:"updated_by" json:"updated_by"`
 }
+
+type Transaction struct {
+	ID            int64     `db:"id" json:"id"`
+	POID          int64     `db:"po_id" json:"po_id"`
+	ItemName      string    `db:"item_name" json:"item_name"`
+	SKU           string    `db:"sku" json:"sku"`
+	Quantity      int64     `db:"quantity" json:"quantity"`
+	ShelfCode     string    `db:"shelf_code" json:"shelf_code"`
+	ShelfLocation string    `db:"shelf_location" json:"shelf_location"`
+	LocationCode  string    `db:"location_code" json:"location_code"`
+	Enabled       string    `db:"enabled" json:"enabled"`
+	Created       time.Time `db:"created" json:"created"`
+	CreatedBy     string    `db:"created_by" json:"created_by"`
+	Updated       time.Time `db:"updated" json:"updated"`
+	UpdatedBy     string    `db:"updated_by" json:"updated_by"`
+}

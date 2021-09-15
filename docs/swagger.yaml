@@ -741,6 +741,10 @@ paths:
         in: query
         name: vendor_name
         type: string
+      - description: 预计到货日期
+        in: query
+        name: receive_date
+        type: string
       produces:
       - application/json
       responses:
@@ -822,7 +826,7 @@ paths:
             $ref: '#/definitions/response.ErrorRes'
       summary: 创建新收货单
       tags:
-      - 商品管理
+      - 捡货模块
   /shelves:
     get:
       consumes:

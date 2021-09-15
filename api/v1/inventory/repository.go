@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"strings"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -19,6 +20,7 @@ func NewInventoryRepository(connection *sqlx.DB) InventoryRepository {
 type InventoryRepository interface {
 	//Item Management
 	GetItemByID(id int64) (Item, error)
+	GetItemBySKU(sku string) (Item, error)
 	GetItemCount(filter ItemFilter) (int, error)
 	GetItemList(filter ItemFilter) ([]Item, error)
 	//PurchaseOrder Management
@@ -26,11 +28,24 @@ type InventoryRepository interface {
 	GetPurchaseOrderCount(filter PurchaseOrderFilter) (int, error)
 	GetPurchaseOrderList(filter PurchaseOrderFilter) ([]PurchaseOrder, error)
 	FilterPOItem(filter FilterPOItem) (*[]PurchaseOrderItem, error)
+	UpdatePOItem(info POItemUpdate) (int64, error)
+
+	//Transaction
+	CreateTransaction(t TransactionNew) error
 }
 
 func (r *inventoryRepository) GetItemByID(id int64) (Item, error) {
 	var item Item
 	err := r.conn.Get(&item, "SELECT * FROM i_items WHERE id = ? ", id)
+	if err != nil {
+		return Item{}, err
+	}
+	return item, nil
+}
+
+func (r *inventoryRepository) GetItemBySKU(sku string) (Item, error) {
+	var item Item
+	err := r.conn.Get(&item, "SELECT * FROM i_items WHERE sku = ? ", sku)
 	if err != nil {
 		return Item{}, err
 	}
@@ -96,6 +111,9 @@ func (r *inventoryRepository) GetPurchaseOrderCount(filter PurchaseOrderFilter) 
 	if v := filter.VendorName; v != "" {
 		where, args = append(where, "vendor_name like ?"), append(args, "%"+v+"%")
 	}
+	if v := filter.ReceiveDate; v != "" {
+		where, args = append(where, "expected_delivery_date = ?"), append(args, v)
+	}
 	var count int
 	err := r.conn.Get(&count, `
 		SELECT count(1) as count 
@@ -114,6 +132,9 @@ func (r *inventoryRepository) GetPurchaseOrderList(filter PurchaseOrderFilter) (
 	}
 	if v := filter.VendorName; v != "" {
 		where, args = append(where, "vendor_name like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.ReceiveDate; v != "" {
+		where, args = append(where, "expected_delivery_date = ?"), append(args, v)
 	}
 	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
 	args = append(args, filter.PageSize)
@@ -148,4 +169,63 @@ func (r *inventoryRepository) FilterPOItem(filter FilterPOItem) (*[]PurchaseOrde
 		return nil, err
 	}
 	return &items, nil
+}
+
+func (r *inventoryRepository) CreateTransaction(t TransactionNew) error {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	result, err := tx.Exec(`
+		INSERT INTO i_transactions
+		(
+			po_id,
+			item_name,
+			sku,
+			quantity,
+			shelf_code,
+			shelf_location,
+			location_code,
+			enabled,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, t.POID, t.ItemName, t.SKU, t.Quantity, t.ShelfCode, t.ShelfLocation, t.LocationCode, 1, time.Now(), t.User, time.Now(), t.User)
+	if err != nil {
+		return err
+	}
+	_, err = result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return nil
+}
+func (r *inventoryRepository) UpdatePOItem(info POItemUpdate) (int64, error) {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	result, err := tx.Exec(`
+		Update i_purchase_order_items SET 
+		quantity_received = quantity_received + ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE po_id = ?
+		AND sku = ?
+	`, info.Quantity, time.Now(), info.User, info.POID, info.SKU)
+	if err != nil {
+		return 0, err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	tx.Commit()
+	return affected, nil
 }

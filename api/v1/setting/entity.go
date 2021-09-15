@@ -17,7 +17,7 @@ type Shelf struct {
 type Location struct {
 	ID        int64     `db:"id" json:"id"`
 	Code      string    `db:"code" json:"code"`
-	Level     int       `db:"level" json:"level"`
+	Level     int64     `db:"level" json:"level"`
 	ShelfID   int64     `db:"shelf_id" json:"shelf_id"`
 	SKU       string    `db:"sku" json:"sku"`
 	Capacity  int64     `db:"capacity" json:"capacity"`

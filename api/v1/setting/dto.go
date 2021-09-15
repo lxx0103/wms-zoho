@@ -63,3 +63,9 @@ type BarcodeNew struct {
 type BarcodeID struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
+
+type UpdateLocationStock struct {
+	Code     string `json:"code"`
+	Quantity int64  `json:"quantity"`
+	User     string `json:"user"`
+}

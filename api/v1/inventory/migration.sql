@@ -59,3 +59,23 @@ CREATE TABLE `i_purchase_order_items` (
   `updated_by` varchar(64) NOT NULL DEFAULT '' COMMENT '更新人',
   PRIMARY KEY (`id`)
 )
+
+/***
+ *** Create Table i_purchase_order_items 采购订单商品表
+***/
+CREATE TABLE `i_transactions` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `po_id` int NOT NULL DEFAULT '0' COMMENT '采购单ID',
+  `item_name` varchar(255) NOT NULL DEFAULT '' COMMENT '商品名称',
+  `sku` varchar(64) NOT NULL DEFAULT '' COMMENT '商品SKU',
+  `quantity` int NOT NULL DEFAULT '0' COMMENT '数量',
+  `shelf_code` varchar(64) NOT NULL DEFAULT '' COMMENT '货架编码',
+  `shelf_location` varchar(64) NOT NULL DEFAULT '' COMMENT '货架位置',
+  `location_code` varchar(64) NOT NULL COMMENT '货位编码',
+  `enabled` tinyint(1) NOT NULL DEFAULT '0' COMMENT '状态',
+  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `created_by` varchar(64) NOT NULL DEFAULT '' COMMENT '创建人',
+  `updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `updated_by` varchar(64) NOT NULL DEFAULT '' COMMENT '更新人',
+  PRIMARY KEY (`id`)
+)

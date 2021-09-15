@@ -657,6 +657,12 @@ var doc = `{
                         "description": "供应商名称",
                         "name": "vendor_name",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "预计到货日期",
+                        "name": "receive_date",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -749,7 +755,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "商品管理"
+                    "捡货模块"
                 ],
                 "summary": "创建新收货单",
                 "operationId": "19",

@@ -32,6 +32,7 @@ type SettingRepository interface {
 	GetLocationList(filter LocationFilter) ([]Location, error)
 	UpdateLocation(id int64, info LocationNew) (int64, error)
 	GetLocationBySKU(sku string) (*[]Location, error)
+	UpdateLocationStock(UpdateLocationStock) (int64, error)
 
 	//Barcode Management
 	GetBarcodeByID(id int64) (Barcode, error)
@@ -287,6 +288,31 @@ func (r *settingRepository) UpdateLocation(id int64, info LocationNew) (int64, e
 		updated_by = ? 
 		WHERE id = ?
 	`, info.Code, info.Level, info.ShelfID, info.SKU, info.Capacity, info.Quantity, info.Capacity-info.Quantity, info.Unit, info.Enabled, time.Now(), info.User, id)
+	if err != nil {
+		return 0, err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	tx.Commit()
+	return affected, nil
+}
+
+func (r *settingRepository) UpdateLocationStock(info UpdateLocationStock) (int64, error) {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	result, err := tx.Exec(`
+		Update s_locations SET 
+		quantity = quantity + ?,
+		available = available - ?, 
+		updated = ?,
+		updated_by = ? 
+		WHERE code = ?
+	`, info.Quantity, info.Quantity, time.Now(), info.User, info.Code)
 	if err != nil {
 		return 0, err
 	}
