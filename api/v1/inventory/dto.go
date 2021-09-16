@@ -4,7 +4,7 @@ type ItemFilter struct {
 	SKU      string `form:"sku" binding:"omitempty,max=64,min=1"`
 	Name     string `form:"name" binding:"omitempty,max=64,min=1"`
 	PageId   int    `form:"page_id" binding:"required,min=1"`
-	PageSize int    `form:"page_size" binding:"required,oneof=3 5 10"`
+	PageSize int    `form:"page_size" binding:"required,oneof=5 10 15 20"`
 }
 
 type ItemID struct {
@@ -16,7 +16,7 @@ type PurchaseOrderFilter struct {
 	VendorName  string `form:"vendor_name" binding:"omitempty,max=64,min=1"`
 	ReceiveDate string `form:"receive_date" binding:"omitempty,datetime=2006-01-02"`
 	PageId      int    `form:"page_id" binding:"required,min=1"`
-	PageSize    int    `form:"page_size" binding:"required,oneof=3 5 10"`
+	PageSize    int    `form:"page_size" binding:"required,oneof=5 10 15 20"`
 }
 
 type PurchaseOrderID struct {
@@ -55,6 +55,7 @@ type StoctInLoc struct {
 
 type TransactionNew struct {
 	POID          int64  `json:"po_id"`
+	PONumber      string `json:"po_number"`
 	ItemName      string `json:"item_name"`
 	SKU           string `json:"sku"`
 	Quantity      int64  `json:"quantity"`
@@ -69,4 +70,15 @@ type POItemUpdate struct {
 	Quantity int64  `json:"quantity"`
 	SKU      string `json:"sku"`
 	User     string `json:"user"`
+}
+type ReceiveID struct {
+	ID int64 `uri:"id" binding:"required,min=1"`
+}
+
+type ReceiveFilter struct {
+	POID     int64  `form:"po_id" binding:"omitempty,min=1"`
+	PONumber string `form:"po_number" binding:"omitempty,max=64,min=1"`
+	SKU      string `form:"sku" binding:"omitempty,max=64,min=1"`
+	PageId   int    `form:"page_id" binding:"required,min=1"`
+	PageSize int    `form:"page_size" binding:"required,oneof=5 10 15 20"`
 }

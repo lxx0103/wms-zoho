@@ -136,7 +136,7 @@ func GetPurchaseOrderByID(c *gin.Context) {
 
 // @Summary 创建新收货单
 // @Id 19
-// @Tags 捡货模块
+// @Tags 收货管理
 // @version 1.0
 // @Accept application/json
 // @Produce application/json
@@ -217,6 +217,7 @@ func NewReceive(c *gin.Context) {
 			break
 		}
 		toStore.Quantity = (*locations)[k].Available
+		toReceive = toReceive - toStore.Quantity
 		res.Location = append(res.Location, toStore)
 	}
 	for l := 0; l < len(res.Location); l++ {
@@ -259,4 +260,34 @@ func NewReceive(c *gin.Context) {
 		}
 	}
 	response.Response(c, res)
+}
+
+// @Summary 收货列表
+// @Id 20
+// @Tags 收货管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param po_id query int false "采购订单id"
+// @Param po_number query string false "采购订单编码"
+// @Param sku query string false "SKU"
+// @Success 200 object response.ListRes{data=[]Transaction} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /receives [GET]
+func GetReceiveList(c *gin.Context) {
+	var filter ReceiveFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	inventoryService := NewInventoryService()
+	count, list, err := inventoryService.GetReceiveList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageId, filter.PageSize, count, list)
 }

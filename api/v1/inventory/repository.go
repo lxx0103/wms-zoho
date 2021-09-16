@@ -29,9 +29,10 @@ type InventoryRepository interface {
 	GetPurchaseOrderList(filter PurchaseOrderFilter) ([]PurchaseOrder, error)
 	FilterPOItem(filter FilterPOItem) (*[]PurchaseOrderItem, error)
 	UpdatePOItem(info POItemUpdate) (int64, error)
-
 	//Transaction
 	CreateTransaction(t TransactionNew) error
+	GetTransactionCount(filter ReceiveFilter) (int, error)
+	GetTransactionList(filter ReceiveFilter) ([]Transaction, error)
 }
 
 func (r *inventoryRepository) GetItemByID(id int64) (Item, error) {
@@ -181,6 +182,7 @@ func (r *inventoryRepository) CreateTransaction(t TransactionNew) error {
 		INSERT INTO i_transactions
 		(
 			po_id,
+			po_number,
 			item_name,
 			sku,
 			quantity,
@@ -193,8 +195,8 @@ func (r *inventoryRepository) CreateTransaction(t TransactionNew) error {
 			updated,
 			updated_by
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, t.POID, t.ItemName, t.SKU, t.Quantity, t.ShelfCode, t.ShelfLocation, t.LocationCode, 1, time.Now(), t.User, time.Now(), t.User)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, t.POID, t.PONumber, t.ItemName, t.SKU, t.Quantity, t.ShelfCode, t.ShelfLocation, t.LocationCode, 1, time.Now(), t.User, time.Now(), t.User)
 	if err != nil {
 		return err
 	}
@@ -228,4 +230,52 @@ func (r *inventoryRepository) UpdatePOItem(info POItemUpdate) (int64, error) {
 	}
 	tx.Commit()
 	return affected, nil
+}
+
+func (r *inventoryRepository) GetTransactionCount(filter ReceiveFilter) (int, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.PONumber; v != "" {
+		where, args = append(where, "po_number = ?"), append(args, v)
+	}
+	if v := filter.POID; v != 0 {
+		where, args = append(where, "po_id = ?"), append(args, v)
+	}
+	if v := filter.SKU; v != "" {
+		where, args = append(where, "sku = ?"), append(args, v)
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count 
+		FROM i_transactions 
+		WHERE `+strings.Join(where, " AND "), args...)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *inventoryRepository) GetTransactionList(filter ReceiveFilter) ([]Transaction, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.PONumber; v != "" {
+		where, args = append(where, "po_number = ?"), append(args, v)
+	}
+	if v := filter.POID; v != 0 {
+		where, args = append(where, "po_id = ?"), append(args, v)
+	}
+	if v := filter.SKU; v != "" {
+		where, args = append(where, "sku = ?"), append(args, v)
+	}
+	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var transactions []Transaction
+	err := r.conn.Select(&transactions, `
+		SELECT * 
+		FROM i_transactions 
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	if err != nil {
+		return nil, err
+	}
+	return transactions, nil
 }

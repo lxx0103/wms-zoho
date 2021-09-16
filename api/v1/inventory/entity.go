@@ -53,6 +53,7 @@ type PurchaseOrderItem struct {
 type Transaction struct {
 	ID            int64     `db:"id" json:"id"`
 	POID          int64     `db:"po_id" json:"po_id"`
+	PONumber      string    `db:"po_number" json:"po_number"`
 	ItemName      string    `db:"item_name" json:"item_name"`
 	SKU           string    `db:"sku" json:"sku"`
 	Quantity      int64     `db:"quantity" json:"quantity"`

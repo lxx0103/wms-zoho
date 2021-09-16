@@ -4,7 +4,7 @@ type ShelfFilter struct {
 	Code     string `form:"code" binding:"omitempty,max=64,min=1"`
 	Location string `form:"location" binding:"omitempty,max=64,min=1"`
 	PageId   int    `form:"page_id" binding:"required,min=1"`
-	PageSize int    `form:"page_size" binding:"required,oneof=3 5 10"`
+	PageSize int    `form:"page_size" binding:"required,oneof=5 10 15 20"`
 }
 
 type ShelfNew struct {
@@ -25,7 +25,7 @@ type LocationFilter struct {
 	ShelfID  int64  `form:"shelf_id" binding:"omitempty,min=1"`
 	SKU      string `form:"sku" binding:"omitempty,max=64,min=1"`
 	PageId   int    `form:"page_id" binding:"required,min=1"`
-	PageSize int    `form:"page_size" binding:"required,oneof=3 5 10"`
+	PageSize int    `form:"page_size" binding:"required,oneof=5 10 15 20"`
 }
 
 type LocationNew struct {
@@ -48,7 +48,7 @@ type BarcodeFilter struct {
 	Code     string `form:"code" binding:"omitempty,max=64,min=1"`
 	SKU      string `form:"sku" binding:"omitempty,max=64,min=1"`
 	PageId   int    `form:"page_id" binding:"required,min=1"`
-	PageSize int    `form:"page_size" binding:"required,oneof=3 5 10"`
+	PageSize int    `form:"page_size" binding:"required,oneof=5 10 15 20"`
 }
 
 type BarcodeNew struct {

@@ -157,12 +157,51 @@ definitions:
     type: object
   inventory.StoctInLoc:
     properties:
-      code:
+      item_name:
+        type: string
+      location_code:
+        type: string
+      location_level:
+        type: integer
+      quantity:
+        type: integer
+      shelf_code:
+        type: string
+      shelf_location:
+        type: string
+      sku:
+        type: string
+    type: object
+  inventory.Transaction:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: string
+      id:
+        type: integer
+      item_name:
+        type: string
+      location_code:
+        type: string
+      po_id:
+        type: integer
+      po_number:
         type: string
       quantity:
         type: integer
-      shelf_id:
-        type: integer
+      shelf_code:
+        type: string
+      shelf_location:
+        type: string
+      sku:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
     type: object
   response.ErrorRes:
     properties:
@@ -797,6 +836,54 @@ paths:
       tags:
       - 采购单管理
   /receives:
+    get:
+      consumes:
+      - application/json
+      operationId: "20"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 采购订单id
+        in: query
+        name: po_id
+        type: integer
+      - description: 采购订单编码
+        in: query
+        name: po_number
+        type: string
+      - description: SKU
+        in: query
+        name: sku
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/inventory.Transaction'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 收货列表
+      tags:
+      - 收货管理
     post:
       consumes:
       - application/json
@@ -826,7 +913,7 @@ paths:
             $ref: '#/definitions/response.ErrorRes'
       summary: 创建新收货单
       tags:
-      - 捡货模块
+      - 收货管理
   /shelves:
     get:
       consumes:

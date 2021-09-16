@@ -17,10 +17,13 @@ type InventoryService interface {
 	GetItemByID(int64) (Item, error)
 	GetItemBySKU(string) (Item, error)
 	GetItemList(ItemFilter) (int, []Item, error)
+	//PO Management
 	GetPurchaseOrderByID(int64) (*PurchaseOrder, error)
 	GetPurchaseOrderList(PurchaseOrderFilter) (int, []PurchaseOrder, error)
 	FilterPOItem(FilterPOItem) (*[]PurchaseOrderItem, error)
 	UpdatePOItem(POItemUpdate) (int64, error)
+	//Receive Management
+	GetReceiveList(ReceiveFilter) (int, []Transaction, error)
 }
 
 func (s *inventoryService) GetItemByID(id int64) (Item, error) {
@@ -83,4 +86,18 @@ func (s *inventoryService) UpdatePOItem(info POItemUpdate) (int64, error) {
 	repo := NewInventoryRepository(db)
 	affected, err := repo.UpdatePOItem(info)
 	return affected, err
+}
+
+func (s *inventoryService) GetReceiveList(filter ReceiveFilter) (int, []Transaction, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	count, err := repo.GetTransactionCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := repo.GetTransactionList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
 }

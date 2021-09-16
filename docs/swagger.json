@@ -733,6 +733,82 @@
             }
         },
         "/receives": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "收货管理"
+                ],
+                "summary": "收货列表",
+                "operationId": "20",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "采购订单id",
+                        "name": "po_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "采购订单编码",
+                        "name": "po_number",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "SKU",
+                        "name": "sku",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/inventory.Transaction"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
             "post": {
                 "consumes": [
                     "application/json"
@@ -741,7 +817,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "捡货模块"
+                    "收货管理"
                 ],
                 "summary": "创建新收货单",
                 "operationId": "19",
@@ -1361,14 +1437,73 @@
         "inventory.StoctInLoc": {
             "type": "object",
             "properties": {
-                "code": {
+                "item_name": {
+                    "type": "string"
+                },
+                "location_code": {
+                    "type": "string"
+                },
+                "location_level": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "shelf_code": {
+                    "type": "string"
+                },
+                "shelf_location": {
+                    "type": "string"
+                },
+                "sku": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventory.Transaction": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "location_code": {
+                    "type": "string"
+                },
+                "po_id": {
+                    "type": "integer"
+                },
+                "po_number": {
                     "type": "string"
                 },
                 "quantity": {
                     "type": "integer"
                 },
-                "shelf_id": {
-                    "type": "integer"
+                "shelf_code": {
+                    "type": "string"
+                },
+                "shelf_location": {
+                    "type": "string"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
                 }
             }
         },
