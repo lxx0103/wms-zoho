@@ -291,3 +291,72 @@ func GetReceiveList(c *gin.Context) {
 	}
 	response.ResponseList(c, filter.PageId, filter.PageSize, count, list)
 }
+
+// @Summary 销售订单列表
+// @Id 21
+// @Tags 销售订单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param so_number query string false "销售订单编码"
+// @Param customer_name query string false "顾客名称"
+// @Param sales_name query string false "销售人员名称"
+// @Param order_date query string false "销售订单日期"
+// @Success 200 object response.ListRes{data=[]SalesOrder} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /salesorders [GET]
+func GetSalesOrderList(c *gin.Context) {
+	var filter SalesOrderFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	inventoryService := NewInventoryService()
+	count, list, err := inventoryService.GetSalesOrderList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageId, filter.PageSize, count, list)
+}
+
+// @Summary 根据ID获取销售订单
+// @Id 22
+// @Tags 销售订单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "销售订单ID"
+// @Success 200 object response.SuccessRes{data=SODetail} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /salesorders/:id [GET]
+func GetSalesOrderByID(c *gin.Context) {
+	var uri SalesOrderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	inventoryService := NewInventoryService()
+	so, err := inventoryService.GetSalesOrderByID(uri.ID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	filter := FilterSOItem{
+		SOID: uri.ID,
+		SKU:  "",
+	}
+	item, err := inventoryService.FilterSOItem(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	var res SODetail
+	res.SO = *so
+	res.Items = *item
+	response.Response(c, res)
+
+}

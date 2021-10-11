@@ -66,3 +66,37 @@ type Transaction struct {
 	Updated       time.Time `db:"updated" json:"updated"`
 	UpdatedBy     string    `db:"updated_by" json:"updated_by"`
 }
+
+type SalesOrder struct {
+	ID           int64     `db:"id" json:"id"`
+	ZohoSOID     string    `db:"zoho_so_id" json:"zoho_so_id"`
+	SONumber     string    `db:"so_number" json:"so_number"`
+	SODate       time.Time `db:"so_date" json:"so_date"`
+	Status       string    `db:"status" json:"status"`
+	CustomerID   string    `db:"customer_id" json:"customer_id"`
+	CustomerName string    `db:"customer_name" json:"customer_name"`
+	SalesName    string    `db:"sales_name" json:"sales_name"`
+	Enabled      string    `db:"enabled" json:"enabled"`
+	Created      time.Time `db:"created" json:"created"`
+	CreatedBy    string    `db:"created_by" json:"created_by"`
+	Updated      time.Time `db:"updated" json:"updated"`
+	UpdatedBy    string    `db:"updated_by" json:"updated_by"`
+}
+
+type SalesOrderItem struct {
+	ID               int64     `db:"id" json:"id"`
+	SOID             int64     `db:"so_id" json:"so_id"`
+	ItemID           int64     `db:"item_id" json:"item_id"`
+	SKU              string    `db:"sku" json:"sku"`
+	ZohoItemID       string    `db:"zoho_item_id" json:"zoho_item_id"`
+	Name             string    `db:"name" json:"name"`
+	Quantity         int64     `db:"quantity" json:"quantity"`
+	QuantityPicked   int64     `db:"quantity_picked" json:"quantity_picked"`
+	QuantityPackaged int64     `db:"quantity_packaged" json:"quantity_packaged"`
+	QuantityShipped  int64     `db:"quantity_shipped" json:"quantity_shipped"`
+	Enabled          string    `db:"enabled" json:"enabled"`
+	Created          time.Time `db:"created" json:"created"`
+	CreatedBy        string    `db:"created_by" json:"created_by"`
+	Updated          time.Time `db:"updated" json:"updated"`
+	UpdatedBy        string    `db:"updated_by" json:"updated_by"`
+}

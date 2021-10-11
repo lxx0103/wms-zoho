@@ -24,6 +24,11 @@ type InventoryService interface {
 	UpdatePOItem(POItemUpdate) (int64, error)
 	//Receive Management
 	GetReceiveList(ReceiveFilter) (int, []Transaction, error)
+	//SO Management
+	GetSalesOrderByID(int64) (*SalesOrder, error)
+	GetSalesOrderList(SalesOrderFilter) (int, []SalesOrder, error)
+	FilterSOItem(FilterSOItem) (*[]SalesOrderItem, error)
+	UpdateSOItem(SOItemUpdate) (int64, error)
 }
 
 func (s *inventoryService) GetItemByID(id int64) (Item, error) {
@@ -100,4 +105,39 @@ func (s *inventoryService) GetReceiveList(filter ReceiveFilter) (int, []Transact
 		return 0, nil, err
 	}
 	return count, list, err
+}
+
+func (s *inventoryService) GetSalesOrderByID(id int64) (*SalesOrder, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	salesOrder, err := repo.GetSalesOrderByID(id)
+	return salesOrder, err
+}
+
+func (s *inventoryService) GetSalesOrderList(filter SalesOrderFilter) (int, []SalesOrder, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	count, err := repo.GetSalesOrderCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := repo.GetSalesOrderList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *inventoryService) FilterSOItem(filter FilterSOItem) (*[]SalesOrderItem, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	items, err := repo.FilterSOItem(filter)
+	return items, err
+}
+
+func (s *inventoryService) UpdateSOItem(info SOItemUpdate) (int64, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	affected, err := repo.UpdateSOItem(info)
+	return affected, err
 }

@@ -148,6 +148,77 @@ definitions:
     - po_id
     - quantity
     type: object
+  inventory.SODetail:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/inventory.SalesOrderItem'
+        type: array
+      so:
+        $ref: '#/definitions/inventory.SalesOrder'
+    type: object
+  inventory.SalesOrder:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      customer_id:
+        type: string
+      customer_name:
+        type: string
+      enabled:
+        type: string
+      id:
+        type: integer
+      sales_name:
+        type: string
+      so_date:
+        type: string
+      so_number:
+        type: string
+      status:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
+      zoho_so_id:
+        type: string
+    type: object
+  inventory.SalesOrderItem:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: string
+      id:
+        type: integer
+      item_id:
+        type: integer
+      name:
+        type: string
+      quantity:
+        type: integer
+      quantity_packaged:
+        type: integer
+      quantity_picked:
+        type: integer
+      quantity_shipped:
+        type: integer
+      sku:
+        type: string
+      so_id:
+        type: integer
+      updated:
+        type: string
+      updated_by:
+        type: string
+      zoho_item_id:
+        type: string
+    type: object
   inventory.StockInRes:
     properties:
       location:
@@ -914,6 +985,89 @@ paths:
       summary: 创建新收货单
       tags:
       - 收货管理
+  /salesorders:
+    get:
+      consumes:
+      - application/json
+      operationId: "21"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 销售订单编码
+        in: query
+        name: so_number
+        type: string
+      - description: 顾客名称
+        in: query
+        name: customer_name
+        type: string
+      - description: 销售人员名称
+        in: query
+        name: sales_name
+        type: string
+      - description: 销售订单日期
+        in: query
+        name: order_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/inventory.SalesOrder'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 销售订单列表
+      tags:
+      - 销售订单管理
+  /salesorders/:id:
+    get:
+      consumes:
+      - application/json
+      operationId: "22"
+      parameters:
+      - description: 销售订单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/inventory.SODetail'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取销售订单
+      tags:
+      - 销售订单管理
   /shelves:
     get:
       consumes:

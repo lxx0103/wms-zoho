@@ -9,7 +9,7 @@ type UserFilter struct {
 	Name     string `json:"name"`
 	Email    string `json:"email" binding:"omitempty,email"`
 	PageId   int    `json:"page_id" binding:"required,min=1"`
-	PageSize int    `json:"page_size" binding:"required,oneof=5 10 15 20"`
+	PageSize int    `json:"page_size" binding:"required,min=5,max=200"`
 }
 
 // UserUpdate represents a set of fields to be updated via UpdateUser().

@@ -874,6 +874,140 @@ var doc = `{
                 }
             }
         },
+        "/salesorders": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售订单管理"
+                ],
+                "summary": "销售订单列表",
+                "operationId": "21",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "销售订单编码",
+                        "name": "so_number",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "顾客名称",
+                        "name": "customer_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "销售人员名称",
+                        "name": "sales_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "销售订单日期",
+                        "name": "order_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/inventory.SalesOrder"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/salesorders/:id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售订单管理"
+                ],
+                "summary": "根据ID获取销售订单",
+                "operationId": "22",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "销售订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/inventory.SODetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/shelves": {
             "get": {
                 "consumes": [
@@ -1434,6 +1568,114 @@ var doc = `{
                 },
                 "quantity": {
                     "type": "integer"
+                }
+            }
+        },
+        "inventory.SODetail": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/inventory.SalesOrderItem"
+                    }
+                },
+                "so": {
+                    "$ref": "#/definitions/inventory.SalesOrder"
+                }
+            }
+        },
+        "inventory.SalesOrder": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "customer_id": {
+                    "type": "string"
+                },
+                "customer_name": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "sales_name": {
+                    "type": "string"
+                },
+                "so_date": {
+                    "type": "string"
+                },
+                "so_number": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                },
+                "zoho_so_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventory.SalesOrderItem": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "item_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "quantity_packaged": {
+                    "type": "integer"
+                },
+                "quantity_picked": {
+                    "type": "integer"
+                },
+                "quantity_shipped": {
+                    "type": "integer"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "so_id": {
+                    "type": "integer"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                },
+                "zoho_item_id": {
+                    "type": "string"
                 }
             }
         },

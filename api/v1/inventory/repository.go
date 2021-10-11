@@ -33,6 +33,12 @@ type InventoryRepository interface {
 	CreateTransaction(t TransactionNew) error
 	GetTransactionCount(filter ReceiveFilter) (int, error)
 	GetTransactionList(filter ReceiveFilter) ([]Transaction, error)
+	//SalesOrder Management
+	GetSalesOrderByID(id int64) (*SalesOrder, error)
+	GetSalesOrderCount(filter SalesOrderFilter) (int, error)
+	GetSalesOrderList(filter SalesOrderFilter) ([]SalesOrder, error)
+	FilterSOItem(filter FilterSOItem) (*[]SalesOrderItem, error)
+	UpdateSOItem(info SOItemUpdate) (int64, error)
 }
 
 func (r *inventoryRepository) GetItemByID(id int64) (Item, error) {
@@ -278,4 +284,111 @@ func (r *inventoryRepository) GetTransactionList(filter ReceiveFilter) ([]Transa
 		return nil, err
 	}
 	return transactions, nil
+}
+
+func (r *inventoryRepository) GetSalesOrderByID(id int64) (*SalesOrder, error) {
+	var salesOrder SalesOrder
+	err := r.conn.Get(&salesOrder, "SELECT * FROM i_sales_orders WHERE id = ? ", id)
+	if err != nil {
+		return nil, err
+	}
+	return &salesOrder, nil
+}
+
+func (r *inventoryRepository) GetSalesOrderCount(filter SalesOrderFilter) (int, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.SONumber; v != "" {
+		where, args = append(where, "so_number like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.CustomerName; v != "" {
+		where, args = append(where, "customer_name like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.SalesName; v != "" {
+		where, args = append(where, "sales_name like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.OrderDate; v != "" {
+		where, args = append(where, "so_date = ?"), append(args, v)
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count 
+		FROM i_sales_orders 
+		WHERE `+strings.Join(where, " AND "), args...)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *inventoryRepository) GetSalesOrderList(filter SalesOrderFilter) ([]SalesOrder, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.SONumber; v != "" {
+		where, args = append(where, "so_number like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.CustomerName; v != "" {
+		where, args = append(where, "customer_name like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.SalesName; v != "" {
+		where, args = append(where, "sales_name like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.OrderDate; v != "" {
+		where, args = append(where, "so_date = ?"), append(args, v)
+	}
+	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var salesOrders []SalesOrder
+	err := r.conn.Select(&salesOrders, `
+		SELECT * 
+		FROM i_sales_orders 
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	if err != nil {
+		return nil, err
+	}
+	return salesOrders, nil
+}
+
+func (r *inventoryRepository) FilterSOItem(filter FilterSOItem) (*[]SalesOrderItem, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.SOID; v != 0 {
+		where, args = append(where, "so_id = ?"), append(args, v)
+	}
+	if v := filter.SKU; v != "" {
+		where, args = append(where, "sku = ?"), append(args, v)
+	}
+	var items []SalesOrderItem
+	err := r.conn.Select(&items, `
+		SELECT * 
+		FROM i_sales_order_items 
+		WHERE `+strings.Join(where, " AND ")+`
+	`, args...)
+	if err != nil {
+		return nil, err
+	}
+	return &items, nil
+}
+func (r *inventoryRepository) UpdateSOItem(info SOItemUpdate) (int64, error) {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	result, err := tx.Exec(`
+		Update i_sales_order_items SET 
+		quantity_received = quantity_received + ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE so_id = ?
+		AND sku = ?
+	`, info.Quantity, time.Now(), info.User, info.SOID, info.SKU)
+	if err != nil {
+		return 0, err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	tx.Commit()
+	return affected, nil
 }
