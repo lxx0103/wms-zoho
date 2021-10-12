@@ -75,6 +75,76 @@ definitions:
       po:
         $ref: '#/definitions/inventory.PurchaseOrder'
     type: object
+  inventory.PickingOrder:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      picking_date:
+        type: string
+      sales_orders:
+        type: string
+      status:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  inventory.PickingOrderDetail:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/inventory.PickingOrderItem'
+        type: array
+      pickingOrder:
+        $ref: '#/definitions/inventory.PickingOrder'
+    type: object
+  inventory.PickingOrderItem:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: string
+      id:
+        type: integer
+      item_id:
+        type: integer
+      name:
+        type: string
+      po_id:
+        type: integer
+      quantity:
+        type: integer
+      quantity_picked:
+        type: integer
+      sku:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
+      zoho_item_id:
+        type: string
+    type: object
+  inventory.PickingOrderNew:
+    properties:
+      so_id:
+        items:
+          type: string
+        type: array
+    required:
+    - so_id
+    type: object
   inventory.PurchaseOrder:
     properties:
       created:
@@ -827,6 +897,115 @@ paths:
       summary: 根据ID更新货位
       tags:
       - 货位管理
+  /pickingorders:
+    get:
+      consumes:
+      - application/json
+      operationId: "23"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 捡货单编码
+        in: query
+        name: order_number
+        type: string
+      - description: 用户名称
+        in: query
+        name: user_name
+        type: string
+      - description: 捡货单日期
+        in: query
+        name: order_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/inventory.PickingOrder'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 捡货订单列表
+      tags:
+      - 捡货管理
+    post:
+      consumes:
+      - application/json
+      operationId: "25"
+      parameters:
+      - description: 销售订单信息
+        in: body
+        name: receive_info
+        required: true
+        schema:
+          $ref: '#/definitions/inventory.PickingOrderNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: integer
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 创建新捡货单
+      tags:
+      - 捡货管理
+  /pickingorders/:id:
+    get:
+      consumes:
+      - application/json
+      operationId: "24"
+      parameters:
+      - description: 销售订单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/inventory.PickingOrderDetail'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取捡货订单
+      tags:
+      - 捡货管理
   /purchaseorders:
     get:
       consumes:

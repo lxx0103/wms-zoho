@@ -11,4 +11,7 @@ func Routers(g *gin.RouterGroup) {
 	g.GET("/receives", GetReceiveList)
 	g.GET("/salesorders", GetSalesOrderList)
 	g.GET("/salesorders/:id", GetSalesOrderByID)
+	g.GET("/pickingorders", GetPickingOrderList)
+	g.GET("/pickingorders/:id", GetPickingOrderByID)
+	g.POST("/pickingorders", NewPickingOrder)
 }

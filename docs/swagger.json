@@ -604,6 +604,184 @@
                 }
             }
         },
+        "/pickingorders": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "捡货管理"
+                ],
+                "summary": "捡货订单列表",
+                "operationId": "23",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "捡货单编码",
+                        "name": "order_number",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户名称",
+                        "name": "user_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "捡货单日期",
+                        "name": "order_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/inventory.PickingOrder"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "捡货管理"
+                ],
+                "summary": "创建新捡货单",
+                "operationId": "25",
+                "parameters": [
+                    {
+                        "description": "销售订单信息",
+                        "name": "receive_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/inventory.PickingOrderNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/pickingorders/:id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "捡货管理"
+                ],
+                "summary": "根据ID获取捡货订单",
+                "operationId": "24",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "销售订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/inventory.PickingOrderDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/purchaseorders": {
             "get": {
                 "consumes": [
@@ -1444,6 +1622,113 @@
                 },
                 "po": {
                     "$ref": "#/definitions/inventory.PurchaseOrder"
+                }
+            }
+        },
+        "inventory.PickingOrder": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "picking_date": {
+                    "type": "string"
+                },
+                "sales_orders": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventory.PickingOrderDetail": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/inventory.PickingOrderItem"
+                    }
+                },
+                "pickingOrder": {
+                    "$ref": "#/definitions/inventory.PickingOrder"
+                }
+            }
+        },
+        "inventory.PickingOrderItem": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "item_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "po_id": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "quantity_picked": {
+                    "type": "integer"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                },
+                "zoho_item_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventory.PickingOrderNew": {
+            "type": "object",
+            "required": [
+                "so_id"
+            ],
+            "properties": {
+                "so_id": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

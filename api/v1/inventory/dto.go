@@ -112,3 +112,29 @@ type SODetail struct {
 	SO    SalesOrder
 	Items []SalesOrderItem
 }
+
+type PickingOrderFilter struct {
+	OrderNumber string `form:"order_number" binding:"omitempty,max=64,min=1"`
+	UserName    string `form:"user_name" binding:"omitempty,max=64,min=1"`
+	OrderDate   string `form:"order_date" binding:"omitempty,datetime=2006-01-02"`
+	PageId      int    `form:"page_id" binding:"required,min=1"`
+	PageSize    int    `form:"page_size" binding:"required,min=5,max=200"`
+}
+
+type PickingOrderID struct {
+	ID int64 `uri:"id" binding:"required,min=1"`
+}
+
+type PickingOrderDetail struct {
+	PickingOrder PickingOrder
+	Items        []PickingOrderItem
+}
+
+type FilterPickingOrderItem struct {
+	POID int64  `json:"po_id"`
+	SKU  string `json:"sku"`
+}
+
+type PickingOrderNew struct {
+	SOID []string `json:"so_id" binding:"required,min=1"`
+}

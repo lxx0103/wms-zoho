@@ -1,6 +1,7 @@
 package inventory
 
 import (
+	"errors"
 	"strings"
 	"time"
 
@@ -39,6 +40,13 @@ type InventoryRepository interface {
 	GetSalesOrderList(filter SalesOrderFilter) ([]SalesOrder, error)
 	FilterSOItem(filter FilterSOItem) (*[]SalesOrderItem, error)
 	UpdateSOItem(info SOItemUpdate) (int64, error)
+	CheckSOExist(ids []string) error
+	//PickingOrder Management
+	GetPickingOrderByID(id int64) (*PickingOrder, error)
+	GetPickingOrderCount(filter PickingOrderFilter) (int, error)
+	GetPickingOrderList(filter PickingOrderFilter) ([]PickingOrder, error)
+	FilterPickingOrderItem(filter FilterPickingOrderItem) (*[]PickingOrderItem, error)
+	CreatePickingOrder([]string, string) (int64, error)
 }
 
 func (r *inventoryRepository) GetItemByID(id int64) (Item, error) {
@@ -368,6 +376,7 @@ func (r *inventoryRepository) FilterSOItem(filter FilterSOItem) (*[]SalesOrderIt
 	}
 	return &items, nil
 }
+
 func (r *inventoryRepository) UpdateSOItem(info SOItemUpdate) (int64, error) {
 	tx, err := r.conn.Begin()
 	if err != nil {
@@ -391,4 +400,171 @@ func (r *inventoryRepository) UpdateSOItem(info SOItemUpdate) (int64, error) {
 	}
 	tx.Commit()
 	return affected, nil
+}
+
+func (r *inventoryRepository) CheckSOExist(ids []string) error {
+	var count int
+	idstring := strings.Join(ids[:], ",")
+	err := r.conn.Get(&count, "SELECT count(1) as count FROM i_sales_orders WHERE id in  ("+idstring+") AND status != 'PICKING'")
+	if err != nil {
+		return err
+	}
+	if count != len(ids) {
+		return errors.New("COUNT ERROR")
+	}
+	return nil
+}
+
+func (r *inventoryRepository) GetPickingOrderByID(id int64) (*PickingOrder, error) {
+	var pickingOrder PickingOrder
+	err := r.conn.Get(&pickingOrder, "SELECT * FROM i_picking_orders WHERE id = ? ", id)
+	if err != nil {
+		return nil, err
+	}
+	return &pickingOrder, nil
+}
+
+func (r *inventoryRepository) GetPickingOrderCount(filter PickingOrderFilter) (int, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.OrderNumber; v != "" {
+		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.UserName; v != "" {
+		where, args = append(where, "created_by like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.OrderDate; v != "" {
+		where, args = append(where, "so_date = ?"), append(args, v)
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count 
+		FROM i_picking_orders 
+		WHERE `+strings.Join(where, " AND "), args...)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *inventoryRepository) GetPickingOrderList(filter PickingOrderFilter) ([]PickingOrder, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.OrderNumber; v != "" {
+		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.UserName; v != "" {
+		where, args = append(where, "created_by like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.OrderDate; v != "" {
+		where, args = append(where, "so_date = ?"), append(args, v)
+	}
+	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var pickingOrders []PickingOrder
+	err := r.conn.Select(&pickingOrders, `
+		SELECT * 
+		FROM i_picking_orders 
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	if err != nil {
+		return nil, err
+	}
+	return pickingOrders, nil
+}
+
+func (r *inventoryRepository) FilterPickingOrderItem(filter FilterPickingOrderItem) (*[]PickingOrderItem, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.POID; v != 0 {
+		where, args = append(where, "po_id = ?"), append(args, v)
+	}
+	if v := filter.SKU; v != "" {
+		where, args = append(where, "sku = ?"), append(args, v)
+	}
+	var items []PickingOrderItem
+	err := r.conn.Select(&items, `
+		SELECT * 
+		FROM i_picking_order_items 
+		WHERE `+strings.Join(where, " AND ")+`
+	`, args...)
+	if err != nil {
+		return nil, err
+	}
+	return &items, nil
+}
+
+func (r *inventoryRepository) CreatePickingOrder(ids []string, user string) (int64, error) {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	result, err := tx.Exec(`
+		INSERT INTO i_picking_orders
+		(
+			name,
+			sales_orders,
+			picking_date,
+			status,
+			enabled,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, time.Now().Format("2006-01-02 15:04:05")+"_by_"+user, strings.Join(ids[:], ","), time.Now().Format("2006-01-02"), "TOPICK", 1, time.Now(), user, time.Now(), user)
+	if err != nil {
+		return 0, err
+	}
+	pickingID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`		
+		INSERT INTO i_picking_order_items 
+		(
+			picking_order_id,
+			item_id,
+			sku,
+			zoho_item_id,
+			name,
+			quantity,
+			quantity_picked,
+			enabled,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		SELECT 
+		?,
+		item_id,
+		sku,
+		zoho_item_id,
+		name,
+		sum(quantity)-sum(quantity_picked),
+		0,
+		1,
+    	?,
+		?,
+		?,
+		?
+		FROM i_sales_order_items 
+		WHERE so_id in (`+strings.Join(ids[:], ",")+`) group by item_id,sku,zoho_item_id,name
+	`, pickingID, time.Now(), user, time.Now(), user)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		Update i_sales_orders SET 
+		status = "PICKING",
+		updated = ?,
+		updated_by = ? 
+		WHERE id in (`+strings.Join(ids[:], ",")+`)
+	`, time.Now(), user)
+	if err != nil {
+		return 0, err
+	}
+	tx.Commit()
+	return pickingID, nil
 }

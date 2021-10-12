@@ -360,3 +360,97 @@ func GetSalesOrderByID(c *gin.Context) {
 	response.Response(c, res)
 
 }
+
+// @Summary 捡货订单列表
+// @Id 23
+// @Tags 捡货管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param order_number query string false "捡货单编码"
+// @Param user_name query string false "用户名称"
+// @Param order_date query string false "捡货单日期"
+// @Success 200 object response.ListRes{data=[]PickingOrder} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pickingorders [GET]
+func GetPickingOrderList(c *gin.Context) {
+	var filter PickingOrderFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	inventoryService := NewInventoryService()
+	count, list, err := inventoryService.GetPickingOrderList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageId, filter.PageSize, count, list)
+}
+
+// @Summary 根据ID获取捡货订单
+// @Id 24
+// @Tags 捡货管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "销售订单ID"
+// @Success 200 object response.SuccessRes{data=PickingOrderDetail} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pickingorders/:id [GET]
+func GetPickingOrderByID(c *gin.Context) {
+	var uri PickingOrderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	inventoryService := NewInventoryService()
+	pickingOrder, err := inventoryService.GetPickingOrderByID(uri.ID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	filter := FilterPickingOrderItem{
+		POID: uri.ID,
+		SKU:  "",
+	}
+	item, err := inventoryService.FilterPickingOrderItem(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	var res PickingOrderDetail
+	res.PickingOrder = *pickingOrder
+	res.Items = *item
+	response.Response(c, res)
+
+}
+
+// @Summary 创建新捡货单
+// @Id 25
+// @Tags 捡货管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param receive_info body PickingOrderNew true "销售订单信息"
+// @Success 200 object response.SuccessRes{data=int64} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pickingorders [POST]
+func NewPickingOrder(c *gin.Context) {
+	var salesOrders PickingOrderNew
+	if err := c.ShouldBindJSON(&salesOrders); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	inventoryService := NewInventoryService()
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	pickingID, err := inventoryService.CreatePickingOrder(salesOrders.SOID, claims.Username)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, pickingID)
+}
