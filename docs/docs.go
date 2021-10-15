@@ -780,7 +780,7 @@ var doc = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/inventory.PickingOrderDetail"
+                                            "$ref": "#/definitions/inventory.PickingOrderInfo"
                                         }
                                     }
                                 }
@@ -1677,6 +1677,68 @@ var doc = `{
         "inventory.PickingOrderDetail": {
             "type": "object",
             "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "item_id": {
+                    "type": "integer"
+                },
+                "location_code": {
+                    "type": "string"
+                },
+                "location_level": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "picking_order_id": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "quantity_picked": {
+                    "type": "integer"
+                },
+                "shelf_code": {
+                    "type": "string"
+                },
+                "shelf_location": {
+                    "type": "string"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                },
+                "zoho_item_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventory.PickingOrderInfo": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/inventory.PickingOrderDetail"
+                    }
+                },
                 "items": {
                     "type": "array",
                     "items": {
@@ -1709,7 +1771,7 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
-                "po_id": {
+                "picking_order_id": {
                     "type": "integer"
                 },
                 "quantity": {
@@ -2004,6 +2066,9 @@ var doc = `{
         "inventory.Transaction": {
             "type": "object",
             "properties": {
+                "balance": {
+                    "type": "integer"
+                },
                 "created": {
                     "type": "string"
                 },
@@ -2020,6 +2085,9 @@ var doc = `{
                     "type": "string"
                 },
                 "location_code": {
+                    "type": "string"
+                },
+                "location_level": {
                     "type": "string"
                 },
                 "po_id": {

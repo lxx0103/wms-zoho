@@ -125,16 +125,36 @@ type PickingOrderID struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
 
-type PickingOrderDetail struct {
+type PickingOrderInfo struct {
 	PickingOrder PickingOrder
 	Items        []PickingOrderItem
+	Details      []PickingOrderDetail
 }
 
 type FilterPickingOrderItem struct {
 	POID int64  `json:"po_id"`
 	SKU  string `json:"sku"`
 }
+type FilterPickingOrderDetail struct {
+	POID int64  `json:"po_id"`
+	SKU  string `json:"sku"`
+}
 
 type PickingOrderNew struct {
 	SOID []string `json:"so_id" binding:"required,min=1"`
+}
+type PickingOrderDetailNew struct {
+	POID           int64  `json:"picking_order_id"`
+	ShelfLocation  string `json:"shelf_location"`
+	ShelfCode      string `json:"shelf_code"`
+	LocationLevel  string `json:"location_level"`
+	LocationCode   string `json:"location_code"`
+	ItemID         int64  `json:"item_id"`
+	SKU            string `json:"sku"`
+	ZohoItemID     string `json:"zoho_item_id"`
+	Name           string `json:"name"`
+	Quantity       int64  `json:"quantity"`
+	QuantityPicked int64  `json:"quantity_picked"`
+	TransactionID  int64  `json:"transaction_id"`
+	UserName       string `json:"user_name"`
 }

@@ -33,6 +33,7 @@ type InventoryService interface {
 	GetPickingOrderByID(int64) (*PickingOrder, error)
 	GetPickingOrderList(PickingOrderFilter) (int, []PickingOrder, error)
 	FilterPickingOrderItem(FilterPickingOrderItem) (*[]PickingOrderItem, error)
+	FilterPickingOrderDetail(FilterPickingOrderDetail) (*[]PickingOrderDetail, error)
 	CreatePickingOrder([]string, string) (int64, error)
 }
 
@@ -175,10 +176,20 @@ func (s *inventoryService) FilterPickingOrderItem(filter FilterPickingOrderItem)
 	return items, err
 }
 
+func (s *inventoryService) FilterPickingOrderDetail(filter FilterPickingOrderDetail) (*[]PickingOrderDetail, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	details, err := repo.FilterPickingOrderDetail(filter)
+	return details, err
+}
 func (s *inventoryService) CreatePickingOrder(soIDs []string, user string) (int64, error) {
 	db := database.InitMySQL()
 	repo := NewInventoryRepository(db)
 	err := repo.CheckSOExist(soIDs)
+	if err != nil {
+		return 0, err
+	}
+	err = repo.CheckSOStock(soIDs)
 	if err != nil {
 		return 0, err
 	}

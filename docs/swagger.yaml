@@ -100,6 +100,47 @@ definitions:
     type: object
   inventory.PickingOrderDetail:
     properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: string
+      id:
+        type: integer
+      item_id:
+        type: integer
+      location_code:
+        type: string
+      location_level:
+        type: string
+      name:
+        type: string
+      picking_order_id:
+        type: integer
+      quantity:
+        type: integer
+      quantity_picked:
+        type: integer
+      shelf_code:
+        type: string
+      shelf_location:
+        type: string
+      sku:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
+      zoho_item_id:
+        type: string
+    type: object
+  inventory.PickingOrderInfo:
+    properties:
+      details:
+        items:
+          $ref: '#/definitions/inventory.PickingOrderDetail'
+        type: array
       items:
         items:
           $ref: '#/definitions/inventory.PickingOrderItem'
@@ -121,7 +162,7 @@ definitions:
         type: integer
       name:
         type: string
-      po_id:
+      picking_order_id:
         type: integer
       quantity:
         type: integer
@@ -315,6 +356,8 @@ definitions:
     type: object
   inventory.Transaction:
     properties:
+      balance:
+        type: integer
       created:
         type: string
       created_by:
@@ -326,6 +369,8 @@ definitions:
       item_name:
         type: string
       location_code:
+        type: string
+      location_level:
         type: string
       po_id:
         type: integer
@@ -997,7 +1042,7 @@ paths:
             - $ref: '#/definitions/response.SuccessRes'
             - properties:
                 data:
-                  $ref: '#/definitions/inventory.PickingOrderDetail'
+                  $ref: '#/definitions/inventory.PickingOrderInfo'
               type: object
         "400":
           description: Bad Request

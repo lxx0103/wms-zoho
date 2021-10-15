@@ -398,7 +398,7 @@ func GetPickingOrderList(c *gin.Context) {
 // @Accept application/json
 // @Produce application/json
 // @Param id path int true "销售订单ID"
-// @Success 200 object response.SuccessRes{data=PickingOrderDetail} 成功
+// @Success 200 object response.SuccessRes{data=PickingOrderInfo} 成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /pickingorders/:id [GET]
 func GetPickingOrderByID(c *gin.Context) {
@@ -422,9 +422,19 @@ func GetPickingOrderByID(c *gin.Context) {
 		response.ResponseError(c, "DatabaseError", err)
 		return
 	}
-	var res PickingOrderDetail
+	filter2 := FilterPickingOrderDetail{
+		POID: uri.ID,
+		SKU:  "",
+	}
+	detail, err := inventoryService.FilterPickingOrderDetail(filter2)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	var res PickingOrderInfo
 	res.PickingOrder = *pickingOrder
 	res.Items = *item
+	res.Details = *detail
 	response.Response(c, res)
 
 }
@@ -450,6 +460,16 @@ func NewPickingOrder(c *gin.Context) {
 	pickingID, err := inventoryService.CreatePickingOrder(salesOrders.SOID, claims.Username)
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	rabbit, _ := queue.GetConn()
+	var newEvent NewPickingCreated
+	newEvent.PickingID = pickingID
+	newEvent.User = claims.Username
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewPickingCreated", msg)
+	if err != nil {
+		response.ResponseError(c, "PublishError", err)
 		return
 	}
 	response.Response(c, pickingID)

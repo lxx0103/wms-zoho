@@ -57,9 +57,11 @@ type Transaction struct {
 	ItemName      string    `db:"item_name" json:"item_name"`
 	SKU           string    `db:"sku" json:"sku"`
 	Quantity      int64     `db:"quantity" json:"quantity"`
+	Balance       int64     `db:"balance" json:"balance"`
 	ShelfCode     string    `db:"shelf_code" json:"shelf_code"`
 	ShelfLocation string    `db:"shelf_location" json:"shelf_location"`
 	LocationCode  string    `db:"location_code" json:"location_code"`
+	LocationLevel string    `db:"location_level" json:"location_level"`
 	Enabled       string    `db:"enabled" json:"enabled"`
 	Created       time.Time `db:"created" json:"created"`
 	CreatedBy     string    `db:"created_by" json:"created_by"`
@@ -116,7 +118,27 @@ type PickingOrder struct {
 
 type PickingOrderItem struct {
 	ID             int64     `db:"id" json:"id"`
-	POID           int64     `db:"po_id" json:"po_id"`
+	POID           int64     `db:"picking_order_id" json:"picking_order_id"`
+	ItemID         int64     `db:"item_id" json:"item_id"`
+	SKU            string    `db:"sku" json:"sku"`
+	ZohoItemID     string    `db:"zoho_item_id" json:"zoho_item_id"`
+	Name           string    `db:"name" json:"name"`
+	Quantity       int64     `db:"quantity" json:"quantity"`
+	QuantityPicked int64     `db:"quantity_picked" json:"quantity_picked"`
+	Enabled        string    `db:"enabled" json:"enabled"`
+	Created        time.Time `db:"created" json:"created"`
+	CreatedBy      string    `db:"created_by" json:"created_by"`
+	Updated        time.Time `db:"updated" json:"updated"`
+	UpdatedBy      string    `db:"updated_by" json:"updated_by"`
+}
+
+type PickingOrderDetail struct {
+	ID             int64     `db:"id" json:"id"`
+	POID           int64     `db:"picking_order_id" json:"picking_order_id"`
+	ShelfLocation  string    `db:"shelf_location" json:"shelf_location"`
+	ShelfCode      string    `db:"shelf_code" json:"shelf_code"`
+	LocationLevel  string    `db:"location_level" json:"location_level"`
+	LocationCode   string    `db:"location_code" json:"location_code"`
 	ItemID         int64     `db:"item_id" json:"item_id"`
 	SKU            string    `db:"sku" json:"sku"`
 	ZohoItemID     string    `db:"zoho_item_id" json:"zoho_item_id"`

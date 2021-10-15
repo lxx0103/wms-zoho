@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -34,6 +35,7 @@ type InventoryRepository interface {
 	CreateTransaction(t TransactionNew) error
 	GetTransactionCount(filter ReceiveFilter) (int, error)
 	GetTransactionList(filter ReceiveFilter) ([]Transaction, error)
+	GetTransactionToPick(sku string) (*Transaction, error)
 	//SalesOrder Management
 	GetSalesOrderByID(id int64) (*SalesOrder, error)
 	GetSalesOrderCount(filter SalesOrderFilter) (int, error)
@@ -41,12 +43,15 @@ type InventoryRepository interface {
 	FilterSOItem(filter FilterSOItem) (*[]SalesOrderItem, error)
 	UpdateSOItem(info SOItemUpdate) (int64, error)
 	CheckSOExist(ids []string) error
+	CheckSOStock(ids []string) error
 	//PickingOrder Management
 	GetPickingOrderByID(id int64) (*PickingOrder, error)
 	GetPickingOrderCount(filter PickingOrderFilter) (int, error)
 	GetPickingOrderList(filter PickingOrderFilter) ([]PickingOrder, error)
 	FilterPickingOrderItem(filter FilterPickingOrderItem) (*[]PickingOrderItem, error)
+	FilterPickingOrderDetail(filter FilterPickingOrderDetail) (*[]PickingOrderDetail, error)
 	CreatePickingOrder([]string, string) (int64, error)
+	CreatePickingOrderDetail(PickingOrderDetailNew) (int64, error)
 }
 
 func (r *inventoryRepository) GetItemByID(id int64) (Item, error) {
@@ -294,6 +299,22 @@ func (r *inventoryRepository) GetTransactionList(filter ReceiveFilter) ([]Transa
 	return transactions, nil
 }
 
+func (r *inventoryRepository) GetTransactionToPick(sku string) (*Transaction, error) {
+	var transaction Transaction
+	err := r.conn.Get(&transaction, `
+		SELECT * 
+		FROM i_transactions 
+		WHERE sku = ?
+		AND balance > 0
+		ORDER BY created ASC
+		LIMIT 1
+	`, sku)
+	if err != nil {
+		return nil, err
+	}
+	return &transaction, nil
+}
+
 func (r *inventoryRepository) GetSalesOrderByID(id int64) (*SalesOrder, error) {
 	var salesOrder SalesOrder
 	err := r.conn.Get(&salesOrder, "SELECT * FROM i_sales_orders WHERE id = ? ", id)
@@ -415,6 +436,30 @@ func (r *inventoryRepository) CheckSOExist(ids []string) error {
 	return nil
 }
 
+func (r *inventoryRepository) CheckSOStock(ids []string) error {
+	var count int
+	idstring := strings.Join(ids[:], ",")
+	fmt.Println(idstring)
+	err := r.conn.Get(&count, `
+		SELECT count(1) AS count FROM (
+			SELECT item_id,sum(quantity)-sum(quantity_picked) AS topick, stock_available 
+			FROM i_sales_order_items isoi
+			LEFT JOIN i_items ii
+			ON ii.id = isoi.item_id
+			WHERE so_id in (`+idstring+`)
+			GROUP BY item_id
+			HAVING topick > stock_available
+		) as table1
+	`)
+	if err != nil {
+		return err
+	}
+	if count != 0 {
+		return errors.New("STOCK ERROR")
+	}
+	return nil
+}
+
 func (r *inventoryRepository) GetPickingOrderByID(id int64) (*PickingOrder, error) {
 	var pickingOrder PickingOrder
 	err := r.conn.Get(&pickingOrder, "SELECT * FROM i_picking_orders WHERE id = ? ", id)
@@ -475,7 +520,7 @@ func (r *inventoryRepository) GetPickingOrderList(filter PickingOrderFilter) ([]
 func (r *inventoryRepository) FilterPickingOrderItem(filter FilterPickingOrderItem) (*[]PickingOrderItem, error) {
 	where, args := []string{"1 = 1"}, []interface{}{}
 	if v := filter.POID; v != 0 {
-		where, args = append(where, "po_id = ?"), append(args, v)
+		where, args = append(where, "picking_order_id = ?"), append(args, v)
 	}
 	if v := filter.SKU; v != "" {
 		where, args = append(where, "sku = ?"), append(args, v)
@@ -490,6 +535,26 @@ func (r *inventoryRepository) FilterPickingOrderItem(filter FilterPickingOrderIt
 		return nil, err
 	}
 	return &items, nil
+}
+
+func (r *inventoryRepository) FilterPickingOrderDetail(filter FilterPickingOrderDetail) (*[]PickingOrderDetail, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.POID; v != 0 {
+		where, args = append(where, "picking_order_id = ?"), append(args, v)
+	}
+	if v := filter.SKU; v != "" {
+		where, args = append(where, "sku = ?"), append(args, v)
+	}
+	var details []PickingOrderDetail
+	err := r.conn.Select(&details, `
+		SELECT * 
+		FROM i_picking_order_details 
+		WHERE `+strings.Join(where, " AND ")+`
+	`, args...)
+	if err != nil {
+		return nil, err
+	}
+	return &details, nil
 }
 
 func (r *inventoryRepository) CreatePickingOrder(ids []string, user string) (int64, error) {
@@ -567,4 +632,87 @@ func (r *inventoryRepository) CreatePickingOrder(ids []string, user string) (int
 	}
 	tx.Commit()
 	return pickingID, nil
+}
+
+func (r *inventoryRepository) CreatePickingOrderDetail(info PickingOrderDetailNew) (int64, error) {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	var exists int64
+	var pickingDetailID int64
+	err = r.conn.Get(&exists, `SELECT id FROM i_picking_order_details WHERE picking_order_id = ? AND location_code = ? LIMIT 1`, info.POID, info.LocationCode)
+	if err == nil {
+		result, err := tx.Exec(`
+			UPDATE i_picking_order_details
+			SET 
+				quantity = quantity + 1,
+				updated = ?,
+				updated_by = ?
+			WHERE id = ?
+		`, time.Now(), info.UserName, exists)
+		if err != nil {
+			return 0, err
+		}
+		_, err = result.RowsAffected()
+		if err != nil {
+			return 0, err
+		}
+		pickingDetailID = exists
+	} else {
+		result, err := tx.Exec(`
+			INSERT INTO i_picking_order_details
+			(
+				picking_order_id,
+				shelf_location,
+				shelf_code,
+				location_level,
+				location_code,
+				item_id,
+				sku,
+				zoho_item_id,
+				name,
+				quantity,
+				quantity_picked,
+				enabled,
+				created,
+				created_by,
+				updated,
+				updated_by
+			)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`, info.POID, info.ShelfLocation, info.ShelfCode, info.LocationLevel, info.LocationCode, info.ItemID, info.SKU, info.ZohoItemID, info.Name, info.Quantity, info.QuantityPicked, 1, time.Now(), info.UserName, time.Now(), info.UserName)
+		if err != nil {
+			return 0, err
+		}
+		pickingDetailID, err = result.LastInsertId()
+		if err != nil {
+			return 0, err
+		}
+	}
+	_, err = tx.Exec(`		
+		Update i_transactions 
+		SET balance = (balance - ?),
+		updated = ?,
+		updated_by = ?
+		WHERE id = ?
+	`, info.Quantity, time.Now(), info.UserName, info.TransactionID)
+	fmt.Println(info.Quantity)
+	fmt.Println(info.TransactionID)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		Update s_locations SET 
+		can_pick = can_pick - ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE code = ?
+	`, info.Quantity, time.Now(), info.UserName, info.LocationCode)
+	if err != nil {
+		return 0, err
+	}
+	tx.Commit()
+	return pickingDetailID, nil
 }
