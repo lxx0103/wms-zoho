@@ -136,8 +136,9 @@ type FilterPickingOrderItem struct {
 	SKU  string `json:"sku"`
 }
 type FilterPickingOrderDetail struct {
-	POID int64  `json:"po_id"`
-	SKU  string `json:"sku"`
+	POID         int64  `json:"po_id"`
+	SKU          string `json:"sku"`
+	LocationCode string `json:"location_code"`
 }
 
 type PickingOrderNew struct {
@@ -157,4 +158,23 @@ type PickingOrderDetailNew struct {
 	QuantityPicked int64  `json:"quantity_picked"`
 	TransactionID  int64  `json:"transaction_id"`
 	UserName       string `json:"user_name"`
+}
+
+type PickingInfo struct {
+	POID         int64  `json:"picking_order_id" binding:"required,min=1"`
+	LocationCode string `json:"location_code" binding:"required,min=1"`
+	Quantity     int64  `json:"quantity" binding:"required,min=1"`
+}
+
+type PickingTransactionNew struct {
+	POID          int64  `db:"po_id" json:"po_id"`
+	PONumber      string `db:"po_number" json:"po_number"`
+	ItemName      string `db:"item_name" json:"item_name"`
+	SKU           string `db:"sku" json:"sku"`
+	Quantity      int64  `db:"quantity" json:"quantity"`
+	ShelfCode     string `db:"shelf_code" json:"shelf_code"`
+	ShelfLocation string `db:"shelf_location" json:"shelf_location"`
+	LocationCode  string `db:"location_code" json:"location_code"`
+	LocationLevel int64  `db:"location_level" json:"location_level"`
+	UserName      string `json:"user_name"`
 }

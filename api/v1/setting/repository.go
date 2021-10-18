@@ -27,6 +27,7 @@ type SettingRepository interface {
 
 	//Location Management
 	GetLocationByID(id int64) (Location, error)
+	GetLocationByCode(code string) (Location, error)
 	CreateLocation(info LocationNew) (int64, error)
 	GetLocationCount(filter LocationFilter) (int, error)
 	GetLocationList(filter LocationFilter) ([]Location, error)
@@ -154,6 +155,14 @@ func (r *settingRepository) UpdateShelf(id int64, info ShelfNew) (int64, error) 
 func (r *settingRepository) GetLocationByID(id int64) (Location, error) {
 	var location Location
 	err := r.conn.Get(&location, "SELECT * FROM s_locations WHERE id = ? ", id)
+	if err != nil {
+		return Location{}, err
+	}
+	return location, nil
+}
+func (r *settingRepository) GetLocationByCode(code string) (Location, error) {
+	var location Location
+	err := r.conn.Get(&location, "SELECT * FROM s_locations WHERE code = ? ", code)
 	if err != nil {
 		return Location{}, err
 	}

@@ -52,6 +52,7 @@ type InventoryRepository interface {
 	FilterPickingOrderDetail(filter FilterPickingOrderDetail) (*[]PickingOrderDetail, error)
 	CreatePickingOrder([]string, string) (int64, error)
 	CreatePickingOrderDetail(PickingOrderDetailNew) (int64, error)
+	CreatePickingTransaction(PickingTransactionNew) (int64, error)
 }
 
 func (r *inventoryRepository) GetItemByID(id int64) (Item, error) {
@@ -545,6 +546,9 @@ func (r *inventoryRepository) FilterPickingOrderDetail(filter FilterPickingOrder
 	if v := filter.SKU; v != "" {
 		where, args = append(where, "sku = ?"), append(args, v)
 	}
+	if v := filter.LocationCode; v != "" {
+		where, args = append(where, "location_code = ?"), append(args, v)
+	}
 	var details []PickingOrderDetail
 	err := r.conn.Select(&details, `
 		SELECT * 
@@ -713,6 +717,101 @@ func (r *inventoryRepository) CreatePickingOrderDetail(info PickingOrderDetailNe
 	if err != nil {
 		return 0, err
 	}
+	_, err = tx.Exec(`
+		Update i_items SET 
+		stock_available = stock_available - ?,
+		stock_picking = stock_picking + ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE id = ?
+	`, info.Quantity, info.Quantity, time.Now(), info.UserName, info.ItemID)
+	if err != nil {
+		return 0, err
+	}
 	tx.Commit()
 	return pickingDetailID, nil
+}
+
+func (r *inventoryRepository) CreatePickingTransaction(info PickingTransactionNew) (int64, error) {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	result, err := tx.Exec(`
+		INSERT INTO i_picking_transactions
+		(
+			po_id,
+			item_name,
+			sku,
+			quantity,
+			shelf_code,
+			shelf_location,
+			location_code,
+			location_level,
+			enabled,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.POID, info.ItemName, info.SKU, info.Quantity, info.ShelfCode, info.ShelfLocation, info.LocationCode, info.LocationLevel, 1, time.Now(), info.UserName, time.Now(), info.UserName)
+	if err != nil {
+		return 0, err
+	}
+	transactionID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`		
+		Update i_picking_order_details 
+		SET quantity_picked = quantity_picked + ?,
+		updated = ?,
+		updated_by = ?
+		WHERE picking_order_id = ?
+		AND location_code = ?
+	`, info.Quantity, time.Now(), info.UserName, info.POID, info.LocationCode)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`		
+		Update i_picking_order_items 
+		SET quantity_picked = quantity_picked + ?,
+		updated = ?,
+		updated_by = ?
+		WHERE picking_order_id = ?
+		AND sku = ?
+	`, info.Quantity, time.Now(), info.UserName, info.POID, info.SKU)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		Update i_items SET 
+		stock = stock - ?,
+		stock_picking = stock_picking - ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE sku = ?
+	`, info.Quantity, info.Quantity, time.Now(), info.UserName, info.SKU)
+	if err != nil {
+		return 0, err
+	}
+	var orderFullPicked int64
+	err = r.conn.Get(&orderFullPicked, `SELECT id FROM i_picking_order_items WHERE picking_order_id = ? AND quantity > quantity_picked LIMIT 1`, info.POID)
+	if err == nil {
+		_, err = tx.Exec(`
+			Update i_picking_orders SET 
+			status = "TOPACK",
+			updated = ?,
+			updated_by = ? 
+			WHERE id = ?
+		`, time.Now(), info.UserName, info.POID)
+		if err != nil {
+			return 0, err
+		}
+	}
+	tx.Commit()
+	return transactionID, nil
 }

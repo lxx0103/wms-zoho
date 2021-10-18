@@ -35,6 +35,7 @@ type InventoryService interface {
 	FilterPickingOrderItem(FilterPickingOrderItem) (*[]PickingOrderItem, error)
 	FilterPickingOrderDetail(FilterPickingOrderDetail) (*[]PickingOrderDetail, error)
 	CreatePickingOrder([]string, string) (int64, error)
+	CreatePickingTransaction(info PickingTransactionNew) (int64, error)
 }
 
 func (s *inventoryService) GetItemByID(id int64) (Item, error) {
@@ -194,5 +195,11 @@ func (s *inventoryService) CreatePickingOrder(soIDs []string, user string) (int6
 		return 0, err
 	}
 	created, err := repo.CreatePickingOrder(soIDs, user)
+	return created, err
+}
+func (s *inventoryService) CreatePickingTransaction(info PickingTransactionNew) (int64, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	created, err := repo.CreatePickingTransaction(info)
 	return created, err
 }

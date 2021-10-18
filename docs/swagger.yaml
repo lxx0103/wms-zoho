@@ -56,7 +56,9 @@ definitions:
       stock:
         type: integer
       stock_available:
-        type: string
+        type: integer
+      stock_picking:
+        type: integer
       unit:
         type: string
       updated:
@@ -74,6 +76,19 @@ definitions:
         type: array
       po:
         $ref: '#/definitions/inventory.PurchaseOrder'
+    type: object
+  inventory.PickingInfo:
+    properties:
+      location_code:
+        type: string
+      picking_order_id:
+        type: integer
+      quantity:
+        type: integer
+    required:
+    - location_code
+    - picking_order_id
+    - quantity
     type: object
   inventory.PickingOrder:
     properties:
@@ -457,6 +472,8 @@ definitions:
   setting.Location:
     properties:
       available:
+        type: integer
+      can_pick:
         type: integer
       capacity:
         type: integer
@@ -1049,6 +1066,37 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorRes'
       summary: 根据ID获取捡货订单
+      tags:
+      - 捡货管理
+  /pickings:
+    post:
+      consumes:
+      - application/json
+      operationId: "26"
+      parameters:
+      - description: 捡货信息
+        in: body
+        name: receive_info
+        required: true
+        schema:
+          $ref: '#/definitions/inventory.PickingInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: integer
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 捡货
       tags:
       - 捡货管理
   /purchaseorders:

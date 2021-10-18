@@ -796,6 +796,58 @@ var doc = `{
                 }
             }
         },
+        "/pickings": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "捡货管理"
+                ],
+                "summary": "捡货",
+                "operationId": "26",
+                "parameters": [
+                    {
+                        "description": "捡货信息",
+                        "name": "receive_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/inventory.PickingInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/purchaseorders": {
             "get": {
                 "consumes": [
@@ -1609,7 +1661,10 @@ var doc = `{
                     "type": "integer"
                 },
                 "stock_available": {
-                    "type": "string"
+                    "type": "integer"
+                },
+                "stock_picking": {
+                    "type": "integer"
                 },
                 "unit": {
                     "type": "string"
@@ -1636,6 +1691,25 @@ var doc = `{
                 },
                 "po": {
                     "$ref": "#/definitions/inventory.PurchaseOrder"
+                }
+            }
+        },
+        "inventory.PickingInfo": {
+            "type": "object",
+            "required": [
+                "location_code",
+                "picking_order_id",
+                "quantity"
+            ],
+            "properties": {
+                "location_code": {
+                    "type": "string"
+                },
+                "picking_order_id": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
                 }
             }
         },
@@ -2218,6 +2292,9 @@ var doc = `{
             "type": "object",
             "properties": {
                 "available": {
+                    "type": "integer"
+                },
+                "can_pick": {
                     "type": "integer"
                 },
                 "capacity": {

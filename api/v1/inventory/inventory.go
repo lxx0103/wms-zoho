@@ -3,6 +3,7 @@ package inventory
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"wms.com/api/v1/setting"
@@ -463,14 +464,97 @@ func NewPickingOrder(c *gin.Context) {
 		return
 	}
 	rabbit, _ := queue.GetConn()
-	var newEvent NewPickingCreated
+	var newEvent NewPickingOrderCreated
 	newEvent.PickingID = pickingID
 	newEvent.User = claims.Username
 	msg, _ := json.Marshal(newEvent)
-	err = rabbit.Publish("NewPickingCreated", msg)
+	err = rabbit.Publish("NewPickingOrderCreated", msg)
 	if err != nil {
 		response.ResponseError(c, "PublishError", err)
 		return
 	}
 	response.Response(c, pickingID)
+}
+
+// @Summary 捡货
+// @Id 26
+// @Tags 捡货管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param receive_info body PickingInfo true "捡货信息"
+// @Success 200 object response.SuccessRes{data=int64} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pickings [POST]
+func NewPicking(c *gin.Context) {
+	var info PickingInfo
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	inventoryService := NewInventoryService()
+	settingService := setting.NewSettingService()
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	// fmt.Println(info)
+	location, err := settingService.GetLocationByCode(info.LocationCode)
+	if err != nil {
+		response.ResponseError(c, "LocationError", err)
+		return
+	}
+	// fmt.Println(location)
+	item, err := inventoryService.GetItemBySKU(location.SKU)
+	if err != nil {
+		response.ResponseError(c, "ItemError", err)
+		return
+	}
+	if item.StockPicking < info.Quantity {
+		response.ResponseError(c, "StockError", errors.New("ITEM PICK TOO MUCH"))
+		return
+	}
+
+	filter := FilterPickingOrderDetail{
+		POID:         info.POID,
+		LocationCode: info.LocationCode,
+	}
+	pickingDetails, err := inventoryService.FilterPickingOrderDetail(filter)
+	if err != nil {
+		response.ResponseError(c, "PickingOrderItemError", err)
+		return
+	}
+	fmt.Println(*pickingDetails)
+	if (*pickingDetails)[0].Quantity-(*pickingDetails)[0].QuantityPicked < info.Quantity {
+		response.ResponseError(c, "StockError", errors.New("LOCATION PICK TOO MUCH"))
+		return
+	}
+	shelf, err := settingService.GetShelfByID(location.ShelfID)
+	if err != nil {
+		response.ResponseError(c, "ShelfError", err)
+		return
+	}
+	var newTransaction PickingTransactionNew
+	newTransaction.POID = info.POID
+	newTransaction.ItemName = item.Name
+	newTransaction.LocationCode = location.Code
+	newTransaction.LocationLevel = location.Level
+	newTransaction.ShelfCode = shelf.Code
+	newTransaction.ShelfLocation = shelf.Location
+	newTransaction.Quantity = info.Quantity
+	newTransaction.SKU = item.SKU
+	newTransaction.UserName = claims.Username
+	transactionID, err := inventoryService.CreatePickingTransaction(newTransaction)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	// rabbit, _ := queue.GetConn()
+	// var newEvent NewPickingCreated
+	// newEvent.PickingID = pickingID
+	// newEvent.User = claims.Username
+	// msg, _ := json.Marshal(newEvent)
+	// err = rabbit.Publish("NewPickingCreated", msg)
+	// if err != nil {
+	// 	response.ResponseError(c, "PublishError", err)
+	// 	return
+	// }
+	response.Response(c, transactionID)
 }

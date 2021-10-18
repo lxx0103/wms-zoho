@@ -23,14 +23,14 @@ type NewReceiveCreated struct {
 	User          string `json:"user"`
 }
 
-type NewPickingCreated struct {
+type NewPickingOrderCreated struct {
 	PickingID int64  `json:"picking_order_id"`
 	User      string `json:"user"`
 }
 
 func Subscribe(conn *queue.Conn) {
 	conn.StartConsumer("NewReceiveCreated", "NewReceiveCreated", AddTransaction)
-	conn.StartConsumer("NewPickingCreated", "NewPickingCreated", AddPicking)
+	conn.StartConsumer("NewPickingOrderCreated", "NewPickingOrderCreated", AddPicking)
 }
 
 func AddTransaction(d amqp.Delivery) bool {
@@ -74,7 +74,7 @@ func AddPicking(d amqp.Delivery) bool {
 	if d.Body == nil {
 		return false
 	}
-	var newPickingCreated NewPickingCreated
+	var newPickingCreated NewPickingOrderCreated
 	err := json.Unmarshal(d.Body, &newPickingCreated)
 	if err != nil {
 		fmt.Println("1")

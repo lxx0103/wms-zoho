@@ -9,7 +9,8 @@ type Item struct {
 	ZohoItemID     string    `db:"zoho_item_id" json:"zoho_item_id"`
 	Unit           string    `db:"unit" json:"unit"`
 	Stock          int       `db:"stock" json:"stock"`
-	StockAvailable string    `db:"stock_available" json:"stock_available"`
+	StockAvailable int64     `db:"stock_available" json:"stock_available"`
+	StockPicking   int64     `db:"stock_picking" json:"stock_picking"`
 	Enabled        string    `db:"enabled" json:"enabled"`
 	Created        time.Time `db:"created" json:"created"`
 	CreatedBy      string    `db:"created_by" json:"created_by"`
@@ -150,4 +151,21 @@ type PickingOrderDetail struct {
 	CreatedBy      string    `db:"created_by" json:"created_by"`
 	Updated        time.Time `db:"updated" json:"updated"`
 	UpdatedBy      string    `db:"updated_by" json:"updated_by"`
+}
+type PickingTransaction struct {
+	ID            int64     `db:"id" json:"id"`
+	POID          int64     `db:"po_id" json:"po_id"`
+	PONumber      string    `db:"po_number" json:"po_number"`
+	ItemName      string    `db:"item_name" json:"item_name"`
+	SKU           string    `db:"sku" json:"sku"`
+	Quantity      int64     `db:"quantity" json:"quantity"`
+	ShelfCode     string    `db:"shelf_code" json:"shelf_code"`
+	ShelfLocation string    `db:"shelf_location" json:"shelf_location"`
+	LocationCode  string    `db:"location_code" json:"location_code"`
+	LocationLevel string    `db:"location_level" json:"location_level"`
+	Enabled       string    `db:"enabled" json:"enabled"`
+	Created       time.Time `db:"created" json:"created"`
+	CreatedBy     string    `db:"created_by" json:"created_by"`
+	Updated       time.Time `db:"updated" json:"updated"`
+	UpdatedBy     string    `db:"updated_by" json:"updated_by"`
 }

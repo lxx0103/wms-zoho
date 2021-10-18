@@ -23,6 +23,7 @@ type Location struct {
 	Capacity  int64     `db:"capacity" json:"capacity"`
 	Quantity  int64     `db:"quantity" json:"quantity"`
 	Available int64     `db:"available" json:"available"`
+	CanPick   int64     `db:"can_pick" json:"can_pick"`
 	Unit      string    `db:"unit" json:"unit"`
 	Enabled   string    `db:"enabled" json:"enabled"`
 	Created   time.Time `db:"created" json:"created"`
