@@ -1,6 +1,8 @@
 package setting
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -34,6 +36,7 @@ type SettingRepository interface {
 	UpdateLocation(id int64, info LocationNew) (int64, error)
 	GetLocationBySKU(sku string) (*[]Location, error)
 	UpdateLocationStock(UpdateLocationStock) (int64, error)
+	StockTransfer(LocationStockTransfer, string) (int64, error)
 
 	//Barcode Management
 	GetBarcodeByID(id int64) (Barcode, error)
@@ -184,6 +187,7 @@ func (r *settingRepository) CreateLocation(info LocationNew) (int64, error) {
 			capacity,
 			quantity,
 			available,
+			alert,
 			unit,
 			enabled,
 			created,
@@ -192,7 +196,7 @@ func (r *settingRepository) CreateLocation(info LocationNew) (int64, error) {
 			updated_by
 		)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.Code, info.Level, info.ShelfID, info.SKU, info.Capacity, info.Quantity, info.Capacity-info.Quantity, info.Unit, info.Enabled, time.Now(), info.User, time.Now(), info.User)
+	`, info.Code, info.Level, info.ShelfID, info.SKU, info.Capacity, info.Quantity, info.Capacity-info.Quantity, info.Alert, info.Unit, info.Enabled, time.Now(), info.User, time.Now(), info.User)
 	if err != nil {
 		return 0, err
 	}
@@ -207,7 +211,7 @@ func (r *settingRepository) CreateLocation(info LocationNew) (int64, error) {
 func (r *settingRepository) GetLocationCount(filter LocationFilter) (int, error) {
 	where, args := []string{"1 = 1"}, []interface{}{}
 	if v := filter.Code; v != "" {
-		where, args = append(where, "code = ?"), append(args, v)
+		where, args = append(where, "code like ?"), append(args, "%"+v+"%")
 	}
 	if v := filter.SKU; v != "" {
 		where, args = append(where, "sku = ?"), append(args, v)
@@ -217,6 +221,9 @@ func (r *settingRepository) GetLocationCount(filter LocationFilter) (int, error)
 	}
 	if v := filter.ShelfID; v != 0 {
 		where, args = append(where, "shelf_id = ?"), append(args, v)
+	}
+	if v := filter.IsAlert; v {
+		where = append(where, "quantity < alert")
 	}
 	var count int
 	err := r.conn.Get(&count, `
@@ -232,7 +239,7 @@ func (r *settingRepository) GetLocationCount(filter LocationFilter) (int, error)
 func (r *settingRepository) GetLocationList(filter LocationFilter) ([]Location, error) {
 	where, args := []string{"1 = 1"}, []interface{}{}
 	if v := filter.Code; v != "" {
-		where, args = append(where, "code = ?"), append(args, v)
+		where, args = append(where, "code like ?"), append(args, "%"+v+"%")
 	}
 	if v := filter.SKU; v != "" {
 		where, args = append(where, "sku = ?"), append(args, v)
@@ -242,6 +249,9 @@ func (r *settingRepository) GetLocationList(filter LocationFilter) ([]Location, 
 	}
 	if v := filter.ShelfID; v != 0 {
 		where, args = append(where, "shelf_id = ?"), append(args, v)
+	}
+	if v := filter.IsAlert; v {
+		where = append(where, "quantity < alert")
 	}
 	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
 	args = append(args, filter.PageSize)
@@ -291,12 +301,13 @@ func (r *settingRepository) UpdateLocation(id int64, info LocationNew) (int64, e
 		capacity = ?,
 		quantity = ?,
 		available = ?, 
+		alert = ?,
 		unit = ?,
 		enabled = ?,
 		updated = ?,
 		updated_by = ? 
 		WHERE id = ?
-	`, info.Code, info.Level, info.ShelfID, info.SKU, info.Capacity, info.Quantity, info.Capacity-info.Quantity, info.Unit, info.Enabled, time.Now(), info.User, id)
+	`, info.Code, info.Level, info.ShelfID, info.SKU, info.Capacity, info.Quantity, info.Capacity-info.Quantity, info.Alert, info.Unit, info.Enabled, time.Now(), info.User, id)
 	if err != nil {
 		return 0, err
 	}
@@ -450,4 +461,81 @@ func (r *settingRepository) GetBarcodeByCode(code string) (*Barcode, error) {
 		return nil, err
 	}
 	return &barcode, nil
+}
+
+func (r *settingRepository) StockTransfer(info LocationStockTransfer, user string) (int64, error) {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	var fromLocation Location
+	err = r.conn.Get(&fromLocation, `SELECT * FROM s_locations WHERE code = ? LIMIT 1`, info.From)
+	if err != nil {
+		fmt.Println("llllll")
+		return 0, err
+	}
+	var toLocation Location
+	err = r.conn.Get(&toLocation, `SELECT * FROM s_locations WHERE code = ? LIMIT 1`, info.To)
+	if err != nil {
+		return 0, err
+	}
+	if toLocation.SKU != fromLocation.SKU {
+		return 0, errors.New("LOCATION SKU NOT THE SAME")
+	}
+	if toLocation.Available < info.Quantity {
+		return 0, errors.New("TO LOCATION NOT ENOUGH")
+	}
+	if fromLocation.Quantity < info.Quantity {
+		return 0, errors.New("FROM LOCATION NOT ENOUGH")
+	}
+	result, err := tx.Exec(`
+		INSERT INTO i_transfer_transactions
+		(
+			from_code,
+			to_code,
+			sku,
+			quantity,
+			enabled,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.From, info.To, fromLocation.SKU, info.Quantity, 1, time.Now(), user, time.Now(), user)
+	if err != nil {
+		return 0, err
+	}
+	transactionID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		Update s_locations SET 
+		quantity = quantity + ?,
+		available = available - ?,
+		can_pick = can_pick + ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE code = ?
+	`, info.Quantity, info.Quantity, info.Quantity, time.Now(), user, info.To)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		Update s_locations SET 
+		quantity = quantity - ?,
+		available = available + ?,
+		can_pick = can_pick - ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE code = ?
+	`, info.Quantity, info.Quantity, info.Quantity, time.Now(), user, info.From)
+	if err != nil {
+		return 0, err
+	}
+	tx.Commit()
+	return transactionID, nil
 }

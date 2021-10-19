@@ -57,6 +57,8 @@ definitions:
         type: integer
       stock_available:
         type: integer
+      stock_packing:
+        type: integer
       stock_picking:
         type: integer
       unit:
@@ -76,6 +78,19 @@ definitions:
         type: array
       po:
         $ref: '#/definitions/inventory.PurchaseOrder'
+    type: object
+  inventory.PackingInfo:
+    properties:
+      quantity:
+        type: integer
+      sales_order_id:
+        type: integer
+      sku:
+        type: string
+    required:
+    - quantity
+    - sales_order_id
+    - sku
     type: object
   inventory.PickingInfo:
     properties:
@@ -328,7 +343,7 @@ definitions:
         type: string
       quantity:
         type: integer
-      quantity_packaged:
+      quantity_packed:
         type: integer
       quantity_picked:
         type: integer
@@ -471,6 +486,8 @@ definitions:
     type: object
   setting.Location:
     properties:
+      alert:
+        type: integer
       available:
         type: integer
       can_pick:
@@ -504,6 +521,8 @@ definitions:
     type: object
   setting.LocationNew:
     properties:
+      alert:
+        type: integer
       capacity:
         type: integer
       code:
@@ -528,6 +547,19 @@ definitions:
     - shelf_id
     - sku
     - unit
+    type: object
+  setting.LocationStockTransfer:
+    properties:
+      from:
+        type: string
+      quantity:
+        type: integer
+      to:
+        type: string
+    required:
+    - from
+    - quantity
+    - to
     type: object
   setting.Shelf:
     properties:
@@ -843,6 +875,10 @@ paths:
         in: query
         name: sku
         type: string
+      - description: 是否预警
+        in: query
+        name: is_alert
+        type: boolean
       produces:
       - application/json
       responses:
@@ -959,6 +995,37 @@ paths:
       summary: 根据ID更新货位
       tags:
       - 货位管理
+  /packings:
+    post:
+      consumes:
+      - application/json
+      operationId: "27"
+      parameters:
+      - description: 捡货信息
+        in: body
+        name: receive_info
+        required: true
+        schema:
+          $ref: '#/definitions/inventory.PackingInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: integer
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 打包
+      tags:
+      - 捡货管理
   /pickingorders:
     get:
       consumes:
@@ -1546,4 +1613,35 @@ paths:
       summary: 用户注册
       tags:
       - 用户权限
+  /transfers:
+    post:
+      consumes:
+      - application/json
+      operationId: "28"
+      parameters:
+      - description: 库存转移信息
+        in: body
+        name: location_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.LocationStockTransfer'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: integer
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 库存转移
+      tags:
+      - 货位管理
 swagger: "2.0"

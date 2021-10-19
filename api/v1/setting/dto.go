@@ -24,6 +24,7 @@ type LocationFilter struct {
 	Level    int    `json:"level" binding:"omitempty,min=1,max=8"`
 	ShelfID  int64  `form:"shelf_id" binding:"omitempty,min=1"`
 	SKU      string `form:"sku" binding:"omitempty,max=64,min=1"`
+	IsAlert  bool   `form:"is_alert" binding:"omitempty"`
 	PageId   int    `form:"page_id" binding:"required,min=1"`
 	PageSize int    `form:"page_size" binding:"required,min=5,max=200"`
 }
@@ -35,6 +36,7 @@ type LocationNew struct {
 	SKU      string `json:"sku" binding:"required,min=1,max=64"`
 	Capacity int    `json:"capacity" binding:"required,min=1"`
 	Quantity int    `json:"quantity" binding:"omitempty"`
+	Alert    int64  `json:"alert" binding:"omitempty"`
 	Unit     string `json:"unit" binding:"required,min=1,max=64"`
 	Enabled  int    `json:"enabled" binding:"required,oneof=1 2"`
 	User     string `json:"user" swaggerignore:"true"`
@@ -68,4 +70,10 @@ type UpdateLocationStock struct {
 	Code     string `json:"code"`
 	Quantity int64  `json:"quantity"`
 	User     string `json:"user"`
+}
+
+type LocationStockTransfer struct {
+	From     string `json:"from" binding:"required,min=1"`
+	To       string `json:"to" binding:"required,min=1"`
+	Quantity int64  `json:"quantity" binding:"required,min=1"`
 }

@@ -178,3 +178,17 @@ type PickingTransactionNew struct {
 	LocationLevel int64  `db:"location_level" json:"location_level"`
 	UserName      string `json:"user_name"`
 }
+
+type PackingInfo struct {
+	SOID     int64  `json:"sales_order_id" binding:"required,min=1"`
+	SKU      string `json:"sku" binding:"required,min=1"`
+	Quantity int64  `json:"quantity" binding:"required,min=1"`
+}
+type PackingTransactionNew struct {
+	SOID     int64  `db:"so_id" json:"so_id"`
+	SONumber string `db:"so_number" json:"so_number"`
+	ItemName string `db:"item_name" json:"item_name"`
+	SKU      string `db:"sku" json:"sku"`
+	Quantity int64  `db:"quantity" json:"quantity"`
+	UserName string `json:"user_name"`
+}

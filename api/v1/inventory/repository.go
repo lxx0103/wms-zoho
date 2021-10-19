@@ -44,6 +44,7 @@ type InventoryRepository interface {
 	UpdateSOItem(info SOItemUpdate) (int64, error)
 	CheckSOExist(ids []string) error
 	CheckSOStock(ids []string) error
+	UpdateSOStatus(ids string, user string) error
 	//PickingOrder Management
 	GetPickingOrderByID(id int64) (*PickingOrder, error)
 	GetPickingOrderCount(filter PickingOrderFilter) (int, error)
@@ -52,7 +53,8 @@ type InventoryRepository interface {
 	FilterPickingOrderDetail(filter FilterPickingOrderDetail) (*[]PickingOrderDetail, error)
 	CreatePickingOrder([]string, string) (int64, error)
 	CreatePickingOrderDetail(PickingOrderDetailNew) (int64, error)
-	CreatePickingTransaction(PickingTransactionNew) (int64, error)
+	CreatePickingTransaction(PickingTransactionNew) (int64, bool, error)
+	CreatePackingTransaction(PackingTransactionNew) (int64, error)
 }
 
 func (r *inventoryRepository) GetItemByID(id int64) (Item, error) {
@@ -702,18 +704,18 @@ func (r *inventoryRepository) CreatePickingOrderDetail(info PickingOrderDetailNe
 		updated_by = ?
 		WHERE id = ?
 	`, info.Quantity, time.Now(), info.UserName, info.TransactionID)
-	fmt.Println(info.Quantity)
-	fmt.Println(info.TransactionID)
 	if err != nil {
 		return 0, err
 	}
 	_, err = tx.Exec(`
 		Update s_locations SET 
 		can_pick = can_pick - ?,
+		quantity = quantity - ?,
+		available = available + ?,
 		updated = ?,
 		updated_by = ? 
 		WHERE code = ?
-	`, info.Quantity, time.Now(), info.UserName, info.LocationCode)
+	`, info.Quantity, info.Quantity, info.Quantity, time.Now(), info.UserName, info.LocationCode)
 	if err != nil {
 		return 0, err
 	}
@@ -732,10 +734,10 @@ func (r *inventoryRepository) CreatePickingOrderDetail(info PickingOrderDetailNe
 	return pickingDetailID, nil
 }
 
-func (r *inventoryRepository) CreatePickingTransaction(info PickingTransactionNew) (int64, error) {
+func (r *inventoryRepository) CreatePickingTransaction(info PickingTransactionNew) (int64, bool, error) {
 	tx, err := r.conn.Begin()
 	if err != nil {
-		return 0, err
+		return 0, false, err
 	}
 	defer tx.Rollback()
 
@@ -759,11 +761,11 @@ func (r *inventoryRepository) CreatePickingTransaction(info PickingTransactionNe
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, info.POID, info.ItemName, info.SKU, info.Quantity, info.ShelfCode, info.ShelfLocation, info.LocationCode, info.LocationLevel, 1, time.Now(), info.UserName, time.Now(), info.UserName)
 	if err != nil {
-		return 0, err
+		return 0, false, err
 	}
 	transactionID, err := result.LastInsertId()
 	if err != nil {
-		return 0, err
+		return 0, false, err
 	}
 	_, err = tx.Exec(`		
 		Update i_picking_order_details 
@@ -774,7 +776,7 @@ func (r *inventoryRepository) CreatePickingTransaction(info PickingTransactionNe
 		AND location_code = ?
 	`, info.Quantity, time.Now(), info.UserName, info.POID, info.LocationCode)
 	if err != nil {
-		return 0, err
+		return 0, false, err
 	}
 	_, err = tx.Exec(`		
 		Update i_picking_order_items 
@@ -785,20 +787,21 @@ func (r *inventoryRepository) CreatePickingTransaction(info PickingTransactionNe
 		AND sku = ?
 	`, info.Quantity, time.Now(), info.UserName, info.POID, info.SKU)
 	if err != nil {
-		return 0, err
+		return 0, false, err
 	}
 	_, err = tx.Exec(`
 		Update i_items SET 
-		stock = stock - ?,
 		stock_picking = stock_picking - ?,
+		stock_packing = stock_packing + ?,
 		updated = ?,
 		updated_by = ? 
 		WHERE sku = ?
 	`, info.Quantity, info.Quantity, time.Now(), info.UserName, info.SKU)
 	if err != nil {
-		return 0, err
+		return 0, false, err
 	}
 	var orderFullPicked int64
+	isFullPicked := false
 	err = r.conn.Get(&orderFullPicked, `SELECT id FROM i_picking_order_items WHERE picking_order_id = ? AND quantity > quantity_picked LIMIT 1`, info.POID)
 	if err == nil {
 		_, err = tx.Exec(`
@@ -809,9 +812,103 @@ func (r *inventoryRepository) CreatePickingTransaction(info PickingTransactionNe
 			WHERE id = ?
 		`, time.Now(), info.UserName, info.POID)
 		if err != nil {
+			return 0, false, err
+		}
+		isFullPicked = true
+	}
+	tx.Commit()
+	return transactionID, isFullPicked, nil
+}
+
+func (r *inventoryRepository) CreatePackingTransaction(info PackingTransactionNew) (int64, error) {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	result, err := tx.Exec(`
+		INSERT INTO i_packing_transactions
+		(
+			so_id,
+			item_name,
+			sku,
+			quantity,
+			enabled,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.SOID, info.ItemName, info.SKU, info.Quantity, 1, time.Now(), info.UserName, time.Now(), info.UserName)
+	if err != nil {
+		return 0, err
+	}
+	transactionID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		Update i_sales_order_items SET 
+		quantity_packed = quantity_packed + ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE so_id = ?
+		AND sku = ?
+	`, info.Quantity, time.Now(), info.UserName, info.SOID, info.SKU)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		Update i_items SET 
+		stock = stock - ?,
+		stock_packing = stock_packing - ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE sku = ?
+	`, info.Quantity, info.Quantity, time.Now(), info.UserName, info.SKU)
+	if err != nil {
+		return 0, err
+	}
+	var orderFullPacked int64
+	err = r.conn.Get(&orderFullPacked, `SELECT id FROM i_sales_order_items WHERE so_id = ? AND quantity > quantity_picked LIMIT 1`, info.SOID)
+	if err == nil {
+		_, err = tx.Exec(`
+			Update i_sales_orders SET 
+			status = "PACKED",
+			updated = ?,
+			updated_by = ? 
+			WHERE id = ?
+		`, time.Now(), info.UserName, info.SOID)
+		if err != nil {
 			return 0, err
 		}
 	}
 	tx.Commit()
 	return transactionID, nil
+}
+
+func (r *inventoryRepository) UpdateSOStatus(ids string, user string) error {
+	_, err := r.conn.Exec(`
+		Update i_sales_orders SET
+		status = "PICKED",
+		updated = ?,
+		updated_by = ?
+		WHERE id in (`+ids+`)
+	`, time.Now(), user)
+	if err != nil {
+		return err
+	}
+	_, err = r.conn.Exec(`
+		Update i_sales_order_items SET
+		quantity_picked = quantity,
+		updated = ?,
+		updated_by = ?
+		WHERE id in (`+ids+`)
+	`, time.Now(), user)
+	if err != nil {
+		return err
+	}
+	return nil
 }

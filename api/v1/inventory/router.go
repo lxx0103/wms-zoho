@@ -15,4 +15,5 @@ func Routers(g *gin.RouterGroup) {
 	g.GET("/pickingorders/:id", GetPickingOrderByID)
 	g.POST("/pickingorders", NewPickingOrder)
 	g.POST("/pickings", NewPicking)
+	g.POST("/packings", NewPacking)
 }

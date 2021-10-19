@@ -28,9 +28,15 @@ type NewPickingOrderCreated struct {
 	User      string `json:"user"`
 }
 
+type PickingOrderPicked struct {
+	PickingID int64  `json:"picking_order_id"`
+	User      string `json:"user"`
+}
+
 func Subscribe(conn *queue.Conn) {
 	conn.StartConsumer("NewReceiveCreated", "NewReceiveCreated", AddTransaction)
 	conn.StartConsumer("NewPickingOrderCreated", "NewPickingOrderCreated", AddPicking)
+	conn.StartConsumer("PickingOrderPicked", "PickingOrderPicked", UpdateSOPicked)
 }
 
 func AddTransaction(d amqp.Delivery) bool {
@@ -146,6 +152,34 @@ func AddPicking(d amqp.Delivery) bool {
 				(*pickingOrderItem)[i].Quantity -= (*transaction).Balance
 			}
 		}
+	}
+	return true
+}
+
+func UpdateSOPicked(d amqp.Delivery) bool {
+	if d.Body == nil {
+		return false
+	}
+	var pickingOrderPicked PickingOrderPicked
+	err := json.Unmarshal(d.Body, &pickingOrderPicked)
+	if err != nil {
+		fmt.Println("1")
+		fmt.Println(err)
+		return false
+	}
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	pickingOrder, err := repo.GetPickingOrderByID(pickingOrderPicked.PickingID)
+	if err != nil {
+		fmt.Println("22")
+		fmt.Println(err)
+		return false
+	}
+	err = repo.UpdateSOStatus(pickingOrder.SalesOrders, pickingOrderPicked.User)
+	if err != nil {
+		fmt.Println("333")
+		fmt.Println(err)
+		return false
 	}
 	return true
 }

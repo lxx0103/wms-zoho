@@ -541,20 +541,66 @@ func NewPicking(c *gin.Context) {
 	newTransaction.Quantity = info.Quantity
 	newTransaction.SKU = item.SKU
 	newTransaction.UserName = claims.Username
-	transactionID, err := inventoryService.CreatePickingTransaction(newTransaction)
+	transactionID, isFullPicked, err := inventoryService.CreatePickingTransaction(newTransaction)
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
 		return
 	}
-	// rabbit, _ := queue.GetConn()
-	// var newEvent NewPickingCreated
-	// newEvent.PickingID = pickingID
-	// newEvent.User = claims.Username
-	// msg, _ := json.Marshal(newEvent)
-	// err = rabbit.Publish("NewPickingCreated", msg)
-	// if err != nil {
-	// 	response.ResponseError(c, "PublishError", err)
-	// 	return
-	// }
+	if isFullPicked {
+		rabbit, _ := queue.GetConn()
+		var newEvent PickingOrderPicked
+		newEvent.PickingID = info.POID
+		newEvent.User = claims.Username
+		msg, _ := json.Marshal(newEvent)
+		err = rabbit.Publish("PickingOrderPicked", msg)
+		if err != nil {
+			response.ResponseError(c, "PublishError", err)
+			return
+		}
+	}
+	response.Response(c, transactionID)
+}
+
+// @Summary 打包
+// @Id 27
+// @Tags 捡货管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param receive_info body PackingInfo true "捡货信息"
+// @Success 200 object response.SuccessRes{data=int64} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /packings [POST]
+func NewPacking(c *gin.Context) {
+	var info PackingInfo
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	inventoryService := NewInventoryService()
+	// settingService := setting.NewSettingService()
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	// fmt.Println(location)
+	item, err := inventoryService.GetItemBySKU(info.SKU)
+	if err != nil {
+		response.ResponseError(c, "ItemError", err)
+		return
+	}
+	if item.StockPacking < info.Quantity {
+		response.ResponseError(c, "StockError", errors.New("ITEM PACK TOO MUCH"))
+		return
+	}
+
+	var newTransaction PackingTransactionNew
+	newTransaction.SOID = info.SOID
+	newTransaction.ItemName = item.Name
+	newTransaction.Quantity = info.Quantity
+	newTransaction.SKU = item.SKU
+	newTransaction.UserName = claims.Username
+	transactionID, err := inventoryService.CreatePackingTransaction(newTransaction)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
 	response.Response(c, transactionID)
 }

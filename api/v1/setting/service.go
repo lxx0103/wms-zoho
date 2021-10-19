@@ -26,6 +26,7 @@ type SettingService interface {
 	GetLocationBySKU(string) (*[]Location, error)
 	GetLocationByCode(string) (Location, error)
 	UpdateLocationStock(UpdateLocationStock) (int64, error)
+	StockTransfer(LocationStockTransfer, string) (int64, error)
 	//Barcode Management
 	GetBarcodeByID(int64) (Barcode, error)
 	NewBarcode(BarcodeNew) (Barcode, error)
@@ -188,4 +189,11 @@ func (s *settingService) GetBarcodeByCode(code string) (*Barcode, error) {
 	repo := NewSettingRepository(db)
 	barcode, err := repo.GetBarcodeByCode(code)
 	return barcode, err
+}
+
+func (s *settingService) StockTransfer(info LocationStockTransfer, user string) (int64, error) {
+	db := database.InitMySQL()
+	repo := NewSettingRepository(db)
+	transaction, err := repo.StockTransfer(info, user)
+	return transaction, err
 }

@@ -133,6 +133,7 @@ func UpdateShelf(c *gin.Context) {
 // @Param level query string false "货位层"
 // @Param shelf_id query string false "货架id"
 // @Param sku query string false "SKU"
+// @Param is_alert query bool false "是否预警"
 // @Success 200 object response.ListRes{data=[]Location} 成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /locations [GET]
@@ -346,6 +347,32 @@ func UpdateBarcode(c *gin.Context) {
 	barcode.User = claims.Username
 	settingService := NewSettingService()
 	new, err := settingService.UpdateBarcode(uri.ID, barcode)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 库存转移
+// @Id 28
+// @Tags 货位管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param location_info body LocationStockTransfer true "库存转移信息"
+// @Success 200 object response.SuccessRes{data=int64} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /transfers [POST]
+func StockTransfer(c *gin.Context) {
+	var info LocationStockTransfer
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	settingService := NewSettingService()
+	new, err := settingService.StockTransfer(info, claims.Username)
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
 		return
