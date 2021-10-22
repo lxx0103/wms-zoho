@@ -67,6 +67,7 @@ func AddTransaction(d amqp.Delivery) bool {
 	transation.ShelfCode = newReceiveCreated.ShelfCode
 	transation.ShelfLocation = newReceiveCreated.ShelfLocation
 	transation.LocationCode = newReceiveCreated.LocationCode
+	transation.LocationLevel = newReceiveCreated.LocationLevel
 	transation.User = newReceiveCreated.User
 	err = repo.CreateTransaction(transation)
 	if err != nil {
@@ -92,14 +93,14 @@ func AddPicking(d amqp.Delivery) bool {
 	// settingRepo := setting.NewSettingRepository(db)
 	var filter FilterPickingOrderItem
 	filter.POID = newPickingCreated.PickingID
-	pickingOrderItem, err := repo.FilterPickingOrderItem(filter)
+	pickingOrderItem, err := repo.FilterPickingOrderItem(filter) //获取所有SKU
 	if err != nil {
 		fmt.Println("11")
 		fmt.Println(err)
 		return false
 	}
 	for i := 0; i < len(*pickingOrderItem); i++ {
-		for (*pickingOrderItem)[i].Quantity > 0 {
+		for q := (*pickingOrderItem)[i].Quantity; q > 0; {
 			transaction, err := repo.GetTransactionToPick((*pickingOrderItem)[i].SKU)
 			if err != nil {
 				fmt.Println("111")
@@ -127,7 +128,7 @@ func AddPicking(d amqp.Delivery) bool {
 					fmt.Println(err)
 					return false
 				}
-				(*pickingOrderItem)[i].Quantity = 0
+				q = 0
 			} else {
 				var detail PickingOrderDetailNew
 				detail.POID = (*pickingOrderItem)[i].POID
@@ -149,7 +150,7 @@ func AddPicking(d amqp.Delivery) bool {
 					fmt.Println(err)
 					return false
 				}
-				(*pickingOrderItem)[i].Quantity -= (*transaction).Balance
+				q -= (*transaction).Balance
 			}
 		}
 	}

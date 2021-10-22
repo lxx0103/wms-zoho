@@ -37,6 +37,8 @@ type SettingRepository interface {
 	GetLocationBySKU(sku string) (*[]Location, error)
 	UpdateLocationStock(UpdateLocationStock) (int64, error)
 	StockTransfer(LocationStockTransfer, string) (int64, error)
+	GetTransferCount(filter TransferFilter) (int, error)
+	GetTransferList(filter TransferFilter) ([]TransferTransaction, error)
 
 	//Barcode Management
 	GetBarcodeByID(id int64) (Barcode, error)
@@ -188,6 +190,7 @@ func (r *settingRepository) CreateLocation(info LocationNew) (int64, error) {
 			quantity,
 			available,
 			alert,
+			can_pick,
 			unit,
 			enabled,
 			created,
@@ -195,8 +198,8 @@ func (r *settingRepository) CreateLocation(info LocationNew) (int64, error) {
 			updated,
 			updated_by
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.Code, info.Level, info.ShelfID, info.SKU, info.Capacity, info.Quantity, info.Capacity-info.Quantity, info.Alert, info.Unit, info.Enabled, time.Now(), info.User, time.Now(), info.User)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.Code, info.Level, info.ShelfID, info.SKU, info.Capacity, info.Quantity, info.Capacity-info.Quantity, info.Alert, info.Quantity, info.Unit, info.Enabled, time.Now(), info.User, time.Now(), info.User)
 	if err != nil {
 		return 0, err
 	}
@@ -328,11 +331,12 @@ func (r *settingRepository) UpdateLocationStock(info UpdateLocationStock) (int64
 	result, err := tx.Exec(`
 		Update s_locations SET 
 		quantity = quantity + ?,
+		can_pick = can_pick + ?,
 		available = available - ?, 
 		updated = ?,
 		updated_by = ? 
 		WHERE code = ?
-	`, info.Quantity, info.Quantity, time.Now(), info.User, info.Code)
+	`, info.Quantity, info.Quantity, info.Quantity, time.Now(), info.User, info.Code)
 	if err != nil {
 		return 0, err
 	}
@@ -538,4 +542,46 @@ func (r *settingRepository) StockTransfer(info LocationStockTransfer, user strin
 	}
 	tx.Commit()
 	return transactionID, nil
+}
+
+func (r *settingRepository) GetTransferCount(filter TransferFilter) (int, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.From; v != "" {
+		where, args = append(where, "from_code like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.To; v != "" {
+		where, args = append(where, "to_code like ?"), append(args, "%"+v+"%")
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count 
+		FROM i_transfer_transactions 
+		WHERE `+strings.Join(where, " AND "), args...)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *settingRepository) GetTransferList(filter TransferFilter) ([]TransferTransaction, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.From; v != "" {
+		where, args = append(where, "from_code like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.To; v != "" {
+		where, args = append(where, "to_code like ?"), append(args, "%"+v+"%")
+	}
+	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var transfers []TransferTransaction
+	err := r.conn.Select(&transfers, `
+		SELECT * 
+		FROM i_transfer_transactions 
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	if err != nil {
+		return nil, err
+	}
+	return transfers, nil
 }

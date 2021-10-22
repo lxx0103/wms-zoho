@@ -379,3 +379,32 @@ func StockTransfer(c *gin.Context) {
 	}
 	response.Response(c, new)
 }
+
+// @Summary 库存转移列表
+// @Id 29
+// @Tags 货位管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param From query string false "来源货位编码"
+// @Param To query string false "目标货位编码"
+// @Success 200 object response.ListRes{data=[]TransferTransaction} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /transfers [GET]
+func GetTransferList(c *gin.Context) {
+	var filter TransferFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	settingService := NewSettingService()
+	count, list, err := settingService.GetTransferList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageId, filter.PageSize, count, list)
+}

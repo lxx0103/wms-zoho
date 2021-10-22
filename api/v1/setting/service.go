@@ -27,6 +27,7 @@ type SettingService interface {
 	GetLocationByCode(string) (Location, error)
 	UpdateLocationStock(UpdateLocationStock) (int64, error)
 	StockTransfer(LocationStockTransfer, string) (int64, error)
+	GetTransferList(TransferFilter) (int, []TransferTransaction, error)
 	//Barcode Management
 	GetBarcodeByID(int64) (Barcode, error)
 	NewBarcode(BarcodeNew) (Barcode, error)
@@ -196,4 +197,18 @@ func (s *settingService) StockTransfer(info LocationStockTransfer, user string) 
 	repo := NewSettingRepository(db)
 	transaction, err := repo.StockTransfer(info, user)
 	return transaction, err
+}
+
+func (s *settingService) GetTransferList(filter TransferFilter) (int, []TransferTransaction, error) {
+	db := database.InitMySQL()
+	repo := NewSettingRepository(db)
+	count, err := repo.GetTransferCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := repo.GetTransferList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
 }

@@ -483,7 +483,7 @@ func NewPickingOrder(c *gin.Context) {
 // @Accept application/json
 // @Produce application/json
 // @Param receive_info body PickingInfo true "捡货信息"
-// @Success 200 object response.SuccessRes{data=int64} 成功
+// @Success 200 object response.SuccessRes{data=PickingResponse} 成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /pickings [POST]
 func NewPicking(c *gin.Context) {
@@ -558,7 +558,10 @@ func NewPicking(c *gin.Context) {
 			return
 		}
 	}
-	response.Response(c, transactionID)
+	var res PickingResponse
+	res.IsCompleted = isFullPicked
+	res.TransactionID = transactionID
+	response.Response(c, res)
 }
 
 // @Summary 打包
@@ -578,10 +581,16 @@ func NewPacking(c *gin.Context) {
 		return
 	}
 	inventoryService := NewInventoryService()
-	// settingService := setting.NewSettingService()
+	settingService := setting.NewSettingService()
 	claims := c.MustGet("claims").(*service.CustomClaims)
 	// fmt.Println(location)
-	item, err := inventoryService.GetItemBySKU(info.SKU)
+	barcode, err := settingService.GetBarcodeByCode(info.Barcode)
+	if err != nil {
+		response.ResponseError(c, "BarcodeError", err)
+		return
+	}
+	info.Quantity = info.Quantity * barcode.Quantity
+	item, err := inventoryService.GetItemBySKU(barcode.SKU)
 	if err != nil {
 		response.ResponseError(c, "ItemError", err)
 		return

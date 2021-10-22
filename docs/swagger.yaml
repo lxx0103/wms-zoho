@@ -81,16 +81,16 @@ definitions:
     type: object
   inventory.PackingInfo:
     properties:
+      bacode:
+        type: string
       quantity:
         type: integer
       sales_order_id:
         type: integer
-      sku:
-        type: string
     required:
+    - bacode
     - quantity
     - sales_order_id
-    - sku
     type: object
   inventory.PickingInfo:
     properties:
@@ -215,6 +215,13 @@ definitions:
         type: array
     required:
     - so_id
+    type: object
+  inventory.PickingResponse:
+    properties:
+      isCompleted:
+        type: boolean
+      transactionID:
+        type: integer
     type: object
   inventory.PurchaseOrder:
     properties:
@@ -597,6 +604,31 @@ definitions:
     - enabled
     - level
     - location
+    type: object
+  setting.TransferTransaction:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: string
+      from_code:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      quantity:
+        type: integer
+      sku:
+        type: string
+      to_code:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
     type: object
   user.UserProfile:
     properties:
@@ -1157,7 +1189,7 @@ paths:
             - $ref: '#/definitions/response.SuccessRes'
             - properties:
                 data:
-                  type: integer
+                  $ref: '#/definitions/inventory.PickingResponse'
               type: object
         "400":
           description: Bad Request
@@ -1614,6 +1646,50 @@ paths:
       tags:
       - 用户权限
   /transfers:
+    get:
+      consumes:
+      - application/json
+      operationId: "29"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 来源货位编码
+        in: query
+        name: From
+        type: string
+      - description: 目标货位编码
+        in: query
+        name: To
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/setting.TransferTransaction'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 库存转移列表
+      tags:
+      - 货位管理
     post:
       consumes:
       - application/json

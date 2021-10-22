@@ -208,21 +208,34 @@ func (r *inventoryRepository) CreateTransaction(t TransactionNew) error {
 			item_name,
 			sku,
 			quantity,
+			balance,
 			shelf_code,
 			shelf_location,
 			location_code,
+			location_level,
 			enabled,
 			created,
 			created_by,
 			updated,
 			updated_by
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, t.POID, t.PONumber, t.ItemName, t.SKU, t.Quantity, t.ShelfCode, t.ShelfLocation, t.LocationCode, 1, time.Now(), t.User, time.Now(), t.User)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, t.POID, t.PONumber, t.ItemName, t.SKU, t.Quantity, t.Quantity, t.ShelfCode, t.ShelfLocation, t.LocationCode, t.LocationLevel, 1, time.Now(), t.User, time.Now(), t.User)
 	if err != nil {
 		return err
 	}
 	_, err = result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(`
+		Update i_items SET 
+		stock_available = stock_available + ?,
+		stock = stock + ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE sku = ?
+	`, t.Quantity, t.Quantity, time.Now(), t.User, t.SKU)
 	if err != nil {
 		return err
 	}
@@ -481,7 +494,7 @@ func (r *inventoryRepository) GetPickingOrderCount(filter PickingOrderFilter) (i
 		where, args = append(where, "created_by like ?"), append(args, "%"+v+"%")
 	}
 	if v := filter.OrderDate; v != "" {
-		where, args = append(where, "so_date = ?"), append(args, v)
+		where, args = append(where, "picking_date = ?"), append(args, v)
 	}
 	var count int
 	err := r.conn.Get(&count, `
@@ -503,7 +516,7 @@ func (r *inventoryRepository) GetPickingOrderList(filter PickingOrderFilter) ([]
 		where, args = append(where, "created_by like ?"), append(args, "%"+v+"%")
 	}
 	if v := filter.OrderDate; v != "" {
-		where, args = append(where, "so_date = ?"), append(args, v)
+		where, args = append(where, "picking_date = ?"), append(args, v)
 	}
 	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
 	args = append(args, filter.PageSize)
@@ -806,7 +819,7 @@ func (r *inventoryRepository) CreatePickingTransaction(info PickingTransactionNe
 	if err == nil {
 		_, err = tx.Exec(`
 			Update i_picking_orders SET 
-			status = "TOPACK",
+			status = "COMPLETED",
 			updated = ?,
 			updated_by = ? 
 			WHERE id = ?

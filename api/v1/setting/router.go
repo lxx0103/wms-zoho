@@ -19,4 +19,5 @@ func Routers(g *gin.RouterGroup) {
 	g.POST("/barcodes", NewBarcode)
 
 	g.POST("/transfers", StockTransfer)
+	g.GET("/transfers", GetTransferList)
 }

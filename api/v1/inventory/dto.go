@@ -62,6 +62,7 @@ type TransactionNew struct {
 	ShelfCode     string `json:"shelf_code"`
 	ShelfLocation string `json:"shelf_location"`
 	LocationCode  string `json:"location_code"`
+	LocationLevel int64  `json:"location_level"`
 	User          string `json:"user"`
 }
 
@@ -181,7 +182,7 @@ type PickingTransactionNew struct {
 
 type PackingInfo struct {
 	SOID     int64  `json:"sales_order_id" binding:"required,min=1"`
-	SKU      string `json:"sku" binding:"required,min=1"`
+	Barcode  string `json:"bacode" binding:"required,min=1"`
 	Quantity int64  `json:"quantity" binding:"required,min=1"`
 }
 type PackingTransactionNew struct {
@@ -191,4 +192,9 @@ type PackingTransactionNew struct {
 	SKU      string `db:"sku" json:"sku"`
 	Quantity int64  `db:"quantity" json:"quantity"`
 	UserName string `json:"user_name"`
+}
+
+type PickingResponse struct {
+	TransactionID int64
+	IsCompleted   bool
 }

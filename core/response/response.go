@@ -37,6 +37,9 @@ func ResponseError(c *gin.Context, code string, err error) {
 	var res ErrorRes
 	res.Code = code
 	res.Message = err.Error()
+	if res.Message == "sql: no rows in result set" {
+		res.Message = "Data Not Exist"
+	}
 	c.AbortWithStatusJSON(400, res)
 }
 

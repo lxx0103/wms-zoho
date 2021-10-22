@@ -77,3 +77,10 @@ type LocationStockTransfer struct {
 	To       string `json:"to" binding:"required,min=1"`
 	Quantity int64  `json:"quantity" binding:"required,min=1"`
 }
+
+type TransferFilter struct {
+	From     string `form:"from" binding:"omitempty,max=64,min=1"`
+	To       string `form:"to" binding:"omitempty,max=64,min=1"`
+	PageId   int    `form:"page_id" binding:"required,min=1"`
+	PageSize int    `form:"page_size" binding:"required,min=5,max=200"`
+}

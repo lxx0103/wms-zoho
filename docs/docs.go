@@ -890,7 +890,7 @@ var doc = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "integer"
+                                            "$ref": "#/definitions/inventory.PickingResponse"
                                         }
                                     }
                                 }
@@ -1636,6 +1636,76 @@ var doc = `{
             }
         },
         "/transfers": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "货位管理"
+                ],
+                "summary": "库存转移列表",
+                "operationId": "29",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "来源货位编码",
+                        "name": "From",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "目标货位编码",
+                        "name": "To",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/setting.TransferTransaction"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
             "post": {
                 "consumes": [
                     "application/json"
@@ -1810,19 +1880,19 @@ var doc = `{
         "inventory.PackingInfo": {
             "type": "object",
             "required": [
+                "bacode",
                 "quantity",
-                "sales_order_id",
-                "sku"
+                "sales_order_id"
             ],
             "properties": {
+                "bacode": {
+                    "type": "string"
+                },
                 "quantity": {
                     "type": "integer"
                 },
                 "sales_order_id": {
                     "type": "integer"
-                },
-                "sku": {
-                    "type": "string"
                 }
             }
         },
@@ -2011,6 +2081,17 @@ var doc = `{
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "inventory.PickingResponse": {
+            "type": "object",
+            "properties": {
+                "isCompleted": {
+                    "type": "boolean"
+                },
+                "transactionID": {
+                    "type": "integer"
                 }
             }
         },
@@ -2584,6 +2665,44 @@ var doc = `{
                     "type": "integer"
                 },
                 "location": {
+                    "type": "string"
+                }
+            }
+        },
+        "setting.TransferTransaction": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "string"
+                },
+                "from_code": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "to_code": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
                     "type": "string"
                 }
             }
