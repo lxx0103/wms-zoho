@@ -40,7 +40,8 @@ type PODetail struct {
 }
 
 type StockInRes struct {
-	Location []StoctInLoc
+	Location    []StoctInLoc
+	IsCompleted bool `json:"is_completed"`
 }
 
 type StoctInLoc struct {
@@ -89,6 +90,7 @@ type SalesOrderFilter struct {
 	CustomerName string `form:"customer_name" binding:"omitempty,max=64,min=1"`
 	SalesName    string `form:"sales_name" binding:"omitempty,max=64,min=1"`
 	OrderDate    string `form:"order_date" binding:"omitempty,datetime=2006-01-02"`
+	Status       string `form:"status" binding:"omitempty,oneof=confirmed picked packed picking invoiced draft fulfilled void partially_shipped shipped "`
 	PageId       int    `form:"page_id" binding:"required,min=1"`
 	PageSize     int    `form:"page_size" binding:"required,min=5,max=200"`
 }
@@ -182,7 +184,7 @@ type PickingTransactionNew struct {
 
 type PackingInfo struct {
 	SOID     int64  `json:"sales_order_id" binding:"required,min=1"`
-	Barcode  string `json:"bacode" binding:"required,min=1"`
+	Barcode  string `json:"barcode" binding:"required,min=1"`
 	Quantity int64  `json:"quantity" binding:"required,min=1"`
 }
 type PackingTransactionNew struct {

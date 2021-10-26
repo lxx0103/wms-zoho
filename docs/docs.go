@@ -1880,12 +1880,12 @@ var doc = `{
         "inventory.PackingInfo": {
             "type": "object",
             "required": [
-                "bacode",
+                "barcode",
                 "quantity",
                 "sales_order_id"
             ],
             "properties": {
-                "bacode": {
+                "barcode": {
                     "type": "string"
                 },
                 "quantity": {
@@ -2316,6 +2316,9 @@ var doc = `{
         "inventory.StockInRes": {
             "type": "object",
             "properties": {
+                "is_completed": {
+                    "type": "boolean"
+                },
                 "location": {
                     "type": "array",
                     "items": {

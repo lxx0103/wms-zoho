@@ -30,7 +30,7 @@ type InventoryRepository interface {
 	GetPurchaseOrderCount(filter PurchaseOrderFilter) (int, error)
 	GetPurchaseOrderList(filter PurchaseOrderFilter) ([]PurchaseOrder, error)
 	FilterPOItem(filter FilterPOItem) (*[]PurchaseOrderItem, error)
-	UpdatePOItem(info POItemUpdate) (int64, error)
+	UpdatePOItem(info POItemUpdate) (bool, error)
 	//Transaction
 	CreateTransaction(t TransactionNew) error
 	GetTransactionCount(filter ReceiveFilter) (int, error)
@@ -242,13 +242,13 @@ func (r *inventoryRepository) CreateTransaction(t TransactionNew) error {
 	tx.Commit()
 	return nil
 }
-func (r *inventoryRepository) UpdatePOItem(info POItemUpdate) (int64, error) {
+func (r *inventoryRepository) UpdatePOItem(info POItemUpdate) (bool, error) {
 	tx, err := r.conn.Begin()
 	if err != nil {
-		return 0, err
+		return false, err
 	}
 	defer tx.Rollback()
-	result, err := tx.Exec(`
+	_, err = tx.Exec(`
 		Update i_purchase_order_items SET 
 		quantity_received = quantity_received + ?,
 		updated = ?,
@@ -257,14 +257,31 @@ func (r *inventoryRepository) UpdatePOItem(info POItemUpdate) (int64, error) {
 		AND sku = ?
 	`, info.Quantity, time.Now(), info.User, info.POID, info.SKU)
 	if err != nil {
-		return 0, err
+		return false, err
 	}
-	affected, err := result.RowsAffected()
+	isCompleted := false
+	var orderFullPicked int64
+	row := tx.QueryRow(`SELECT id FROM i_purchase_order_items WHERE po_id = ? AND quantity > quantity_received LIMIT 1`, info.POID)
+	err = row.Scan(&orderFullPicked)
 	if err != nil {
-		return 0, err
+		if err.Error() == "sql: no rows in result set" {
+			_, err = tx.Exec(`
+				Update i_purchase_orders SET 
+				status = "COMPLETED",
+				updated = ?,
+				updated_by = ? 
+				WHERE id = ?
+			`, time.Now(), info.User, info.POID)
+			if err != nil {
+				return false, err
+			}
+			isCompleted = true
+		} else {
+			return false, err
+		}
 	}
 	tx.Commit()
-	return affected, nil
+	return isCompleted, nil
 }
 
 func (r *inventoryRepository) GetTransactionCount(filter ReceiveFilter) (int, error) {
@@ -354,6 +371,9 @@ func (r *inventoryRepository) GetSalesOrderCount(filter SalesOrderFilter) (int, 
 	if v := filter.OrderDate; v != "" {
 		where, args = append(where, "so_date = ?"), append(args, v)
 	}
+	if v := filter.Status; v != "" {
+		where, args = append(where, "status = ?"), append(args, v)
+	}
 	var count int
 	err := r.conn.Get(&count, `
 		SELECT count(1) as count 
@@ -378,6 +398,9 @@ func (r *inventoryRepository) GetSalesOrderList(filter SalesOrderFilter) ([]Sale
 	}
 	if v := filter.OrderDate; v != "" {
 		where, args = append(where, "so_date = ?"), append(args, v)
+	}
+	if v := filter.Status; v != "" {
+		where, args = append(where, "status = ?"), append(args, v)
 	}
 	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
 	args = append(args, filter.PageSize)
@@ -525,6 +548,7 @@ func (r *inventoryRepository) GetPickingOrderList(filter PickingOrderFilter) ([]
 		SELECT * 
 		FROM i_picking_orders 
 		WHERE `+strings.Join(where, " AND ")+`
+		ORDER BY ID DESC
 		LIMIT ?, ?
 	`, args...)
 	if err != nil {
@@ -666,11 +690,11 @@ func (r *inventoryRepository) CreatePickingOrderDetail(info PickingOrderDetailNe
 		result, err := tx.Exec(`
 			UPDATE i_picking_order_details
 			SET 
-				quantity = quantity + 1,
+				quantity = quantity + ?,
 				updated = ?,
 				updated_by = ?
 			WHERE id = ?
-		`, time.Now(), info.UserName, exists)
+		`, info.Quantity, time.Now(), info.UserName, exists)
 		if err != nil {
 			return 0, err
 		}
@@ -815,19 +839,25 @@ func (r *inventoryRepository) CreatePickingTransaction(info PickingTransactionNe
 	}
 	var orderFullPicked int64
 	isFullPicked := false
-	err = r.conn.Get(&orderFullPicked, `SELECT id FROM i_picking_order_items WHERE picking_order_id = ? AND quantity > quantity_picked LIMIT 1`, info.POID)
-	if err == nil {
-		_, err = tx.Exec(`
-			Update i_picking_orders SET 
-			status = "COMPLETED",
-			updated = ?,
-			updated_by = ? 
-			WHERE id = ?
-		`, time.Now(), info.UserName, info.POID)
-		if err != nil {
+	row := tx.QueryRow(`SELECT id FROM i_picking_order_items WHERE picking_order_id = ? AND quantity > quantity_picked LIMIT 1`, info.POID)
+	err = row.Scan(&orderFullPicked)
+	if err != nil {
+		fmt.Println(err)
+		if err.Error() == "sql: no rows in result set" {
+			_, err = tx.Exec(`
+				Update i_picking_orders SET 
+				status = "COMPLETED",
+				updated = ?,
+				updated_by = ? 
+				WHERE id = ?
+			`, time.Now(), info.UserName, info.POID)
+			if err != nil {
+				return 0, false, err
+			}
+			isFullPicked = true
+		} else {
 			return 0, false, err
 		}
-		isFullPicked = true
 	}
 	tx.Commit()
 	return transactionID, isFullPicked, nil

@@ -281,6 +281,7 @@ func (r *settingRepository) GetLocationBySKU(sku string) (*[]Location, error) {
 		FROM s_locations 
 		WHERE `+strings.Join(where, " AND ")+`
 		AND available > 0
+		AND enabled = 1
 		ORDER BY available ASC
 	`, args...)
 	if err != nil {

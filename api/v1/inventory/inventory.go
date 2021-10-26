@@ -199,6 +199,7 @@ func NewReceive(c *gin.Context) {
 	}
 	rabbit, _ := queue.GetConn()
 	var res StockInRes
+	isCompleted := false
 	for k := 0; k < len(*locations); k++ {
 		shelf, err := settingService.GetShelfByID((*locations)[k].ShelfID)
 		if err != nil {
@@ -238,7 +239,7 @@ func NewReceive(c *gin.Context) {
 		poUpdateInfo.Quantity = res.Location[l].Quantity
 		poUpdateInfo.SKU = res.Location[l].SKU
 		poUpdateInfo.User = claims.Username
-		_, err = inventoryService.UpdatePOItem(poUpdateInfo)
+		isCompleted, err = inventoryService.UpdatePOItem(poUpdateInfo)
 		if err != nil {
 			response.ResponseError(c, "UpdateLocationError", err)
 			return
@@ -260,6 +261,7 @@ func NewReceive(c *gin.Context) {
 			return
 		}
 	}
+	res.IsCompleted = isCompleted
 	response.Response(c, res)
 }
 
