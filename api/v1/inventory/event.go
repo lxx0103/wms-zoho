@@ -101,13 +101,14 @@ func AddPicking(d amqp.Delivery) bool {
 	}
 	for i := 0; i < len(*pickingOrderItem); i++ {
 		for q := (*pickingOrderItem)[i].Quantity; q > 0; {
+			fmt.Println(q)
 			transaction, err := repo.GetTransactionToPick((*pickingOrderItem)[i].SKU)
 			if err != nil {
 				fmt.Println("111")
 				fmt.Println(err)
 				return false
 			}
-			if (*transaction).Balance >= (*pickingOrderItem)[i].Quantity {
+			if (*transaction).Balance >= q {
 				var detail PickingOrderDetailNew
 				detail.POID = (*pickingOrderItem)[i].POID
 				detail.ItemID = (*pickingOrderItem)[i].ItemID
@@ -118,7 +119,7 @@ func AddPicking(d amqp.Delivery) bool {
 				detail.ShelfCode = (*transaction).ShelfCode
 				detail.LocationLevel = (*transaction).LocationLevel
 				detail.LocationCode = (*transaction).LocationCode
-				detail.Quantity = (*pickingOrderItem)[i].Quantity
+				detail.Quantity = q
 				detail.QuantityPicked = 0
 				detail.UserName = newPickingCreated.User
 				detail.TransactionID = (*transaction).ID

@@ -915,16 +915,22 @@ func (r *inventoryRepository) CreatePackingTransaction(info PackingTransactionNe
 		return 0, err
 	}
 	var orderFullPacked int64
-	err = r.conn.Get(&orderFullPacked, `SELECT id FROM i_sales_order_items WHERE so_id = ? AND quantity > quantity_picked LIMIT 1`, info.SOID)
-	if err == nil {
-		_, err = tx.Exec(`
-			Update i_sales_orders SET 
-			status = "PACKED",
-			updated = ?,
-			updated_by = ? 
-			WHERE id = ?
-		`, time.Now(), info.UserName, info.SOID)
-		if err != nil {
+	row := tx.QueryRow(`SELECT id FROM i_sales_order_items WHERE so_id = ? AND quantity > quantity_picked LIMIT 1`, info.SOID)
+	err = row.Scan(&orderFullPacked)
+	if err != nil {
+		fmt.Println(err)
+		if err.Error() == "sql: no rows in result set" {
+			_, err = tx.Exec(`
+				Update i_sales_orders SET 
+				status = "PACKED",
+				updated = ?,
+				updated_by = ? 
+				WHERE id = ?
+			`, time.Now(), info.UserName, info.SOID)
+			if err != nil {
+				return 0, err
+			}
+		} else {
 			return 0, err
 		}
 	}
@@ -948,7 +954,7 @@ func (r *inventoryRepository) UpdateSOStatus(ids string, user string) error {
 		quantity_picked = quantity,
 		updated = ?,
 		updated_by = ?
-		WHERE id in (`+ids+`)
+		WHERE so_id in (`+ids+`)
 	`, time.Now(), user)
 	if err != nil {
 		return err
