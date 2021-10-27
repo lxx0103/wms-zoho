@@ -601,7 +601,16 @@ func NewPacking(c *gin.Context) {
 		response.ResponseError(c, "StockError", errors.New("ITEM PACK TOO MUCH"))
 		return
 	}
-
+	var filter FilterSOItem
+	soItems, err := inventoryService.FilterSOItem(filter)
+	if err != nil {
+		response.ResponseError(c, "SalesOrder Item Error", err)
+		return
+	}
+	if info.Quantity > (*soItems)[0].Quantity-(*soItems)[0].QuantityPacked {
+		response.ResponseError(c, "StockError", errors.New("ITEM PACK TOO MUCH"))
+		return
+	}
 	var newTransaction PackingTransactionNew
 	newTransaction.SOID = info.SOID
 	newTransaction.ItemName = item.Name

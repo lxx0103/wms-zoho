@@ -915,7 +915,7 @@ func (r *inventoryRepository) CreatePackingTransaction(info PackingTransactionNe
 		return 0, err
 	}
 	var orderFullPacked int64
-	row := tx.QueryRow(`SELECT id FROM i_sales_order_items WHERE so_id = ? AND quantity > quantity_picked LIMIT 1`, info.SOID)
+	row := tx.QueryRow(`SELECT id FROM i_sales_order_items WHERE so_id = ? AND quantity > quantity_packed LIMIT 1`, info.SOID)
 	err = row.Scan(&orderFullPacked)
 	if err != nil {
 		fmt.Println(err)
