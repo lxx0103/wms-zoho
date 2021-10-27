@@ -228,6 +228,9 @@ func (r *settingRepository) GetLocationCount(filter LocationFilter) (int, error)
 	if v := filter.IsAlert; v {
 		where = append(where, "quantity < alert")
 	}
+	if v := filter.IsActive; v {
+		where = append(where, "enabled = 1")
+	}
 	var count int
 	err := r.conn.Get(&count, `
 		SELECT count(1) as count 
@@ -255,6 +258,9 @@ func (r *settingRepository) GetLocationList(filter LocationFilter) ([]Location, 
 	}
 	if v := filter.IsAlert; v {
 		where = append(where, "quantity < alert")
+	}
+	if v := filter.IsActive; v {
+		where = append(where, "enabled = 1")
 	}
 	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
 	args = append(args, filter.PageSize)

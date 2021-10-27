@@ -134,6 +134,7 @@ func UpdateShelf(c *gin.Context) {
 // @Param shelf_id query string false "货架id"
 // @Param sku query string false "SKU"
 // @Param is_alert query bool false "是否预警"
+// @Param is_active query bool false "是否启用"
 // @Success 200 object response.ListRes{data=[]Location} 成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /locations [GET]

@@ -434,6 +434,12 @@ var doc = `{
                         "description": "是否预警",
                         "name": "is_alert",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_active",
+                        "in": "query"
                     }
                 ],
                 "responses": {

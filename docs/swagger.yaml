@@ -913,6 +913,10 @@ paths:
         in: query
         name: is_alert
         type: boolean
+      - description: 是否启用
+        in: query
+        name: is_active
+        type: boolean
       produces:
       - application/json
       responses:

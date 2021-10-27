@@ -25,6 +25,7 @@ type LocationFilter struct {
 	ShelfID  int64  `form:"shelf_id" binding:"omitempty,min=1"`
 	SKU      string `form:"sku" binding:"omitempty,max=64,min=1"`
 	IsAlert  bool   `form:"is_alert" binding:"omitempty"`
+	IsActive bool   `form:"is_active" binding:"omitempty"`
 	PageId   int    `form:"page_id" binding:"required,min=1"`
 	PageSize int    `form:"page_size" binding:"required,min=5,max=200"`
 }
