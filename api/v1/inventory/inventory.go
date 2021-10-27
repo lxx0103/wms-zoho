@@ -609,6 +609,7 @@ func NewPacking(c *gin.Context) {
 		response.ResponseError(c, "SalesOrder Item Error", err)
 		return
 	}
+	fmt.Println((*soItems)[0])
 	if info.Quantity > (*soItems)[0].Quantity-(*soItems)[0].QuantityPacked {
 		response.ResponseError(c, "StockError", errors.New("ITEM PACK TOO MUCH"))
 		return
