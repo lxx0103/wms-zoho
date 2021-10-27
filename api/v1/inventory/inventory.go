@@ -602,6 +602,8 @@ func NewPacking(c *gin.Context) {
 		return
 	}
 	var filter FilterSOItem
+	filter.SOID = info.SOID
+	filter.SKU = barcode.SKU
 	soItems, err := inventoryService.FilterSOItem(filter)
 	if err != nil {
 		response.ResponseError(c, "SalesOrder Item Error", err)
