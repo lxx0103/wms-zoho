@@ -611,7 +611,7 @@ func NewPacking(c *gin.Context) {
 	}
 	fmt.Println((*soItems)[0])
 	if info.Quantity > (*soItems)[0].Quantity-(*soItems)[0].QuantityPacked {
-		response.ResponseError(c, "StockError", errors.New("ITEM PACK TOO MUCH"))
+		response.ResponseError(c, "StockError", errors.New("SO ITEM PACK TOO MUCH"))
 		return
 	}
 	var newTransaction PackingTransactionNew
