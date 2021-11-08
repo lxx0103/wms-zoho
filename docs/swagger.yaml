@@ -1,5 +1,50 @@
 basePath: /
 definitions:
+  auth.APINew:
+    properties:
+      enabled:
+        type: integer
+      method:
+        type: string
+      name:
+        type: string
+      route:
+        type: string
+    required:
+    - enabled
+    - method
+    - name
+    - route
+    type: object
+  auth.MenuNew:
+    properties:
+      enabled:
+        type: integer
+      name:
+        type: string
+    required:
+    - enabled
+    - name
+    type: object
+  auth.RoleMenu:
+    properties:
+      ids:
+        items:
+          type: integer
+        type: array
+    required:
+    - ids
+    type: object
+  auth.RoleNew:
+    properties:
+      enabled:
+        type: integer
+      name:
+        type: string
+    required:
+    - enabled
+    - name
+    type: object
   auth.SigninRequest:
     properties:
       auth_type:
@@ -38,6 +83,61 @@ definitions:
     - email
     - identifier
     - name
+    type: object
+  auth.UserAPI:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: string
+      id:
+        type: integer
+      method:
+        type: string
+      name:
+        type: string
+      route:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  auth.UserMenu:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  auth.UserRole:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
     type: object
   inventory.Item:
     properties:
@@ -662,6 +762,146 @@ info:
   title: WMS API
   version: "1.0"
 paths:
+  /apis:
+    get:
+      consumes:
+      - application/json
+      operationId: "34"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: API名称
+        in: query
+        name: name
+        type: string
+      - description: API路由
+        in: query
+        name: route
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/auth.UserAPI'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: API列表
+      tags:
+      - API管理
+    post:
+      consumes:
+      - application/json
+      operationId: "35"
+      parameters:
+      - description: API信息
+        in: body
+        name: api_info
+        required: true
+        schema:
+          $ref: '#/definitions/auth.APINew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.UserAPI'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建API
+      tags:
+      - API管理
+  /apis/:id:
+    get:
+      consumes:
+      - application/json
+      operationId: "36"
+      parameters:
+      - description: API ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.UserAPI'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取API
+      tags:
+      - API管理
+    put:
+      consumes:
+      - application/json
+      operationId: "37"
+      parameters:
+      - description: API ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: API信息
+        in: body
+        name: api_info
+        required: true
+        schema:
+          $ref: '#/definitions/auth.APINew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.UserAPI'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新API
+      tags:
+      - API管理
   /barcodes:
     get:
       consumes:
@@ -1033,6 +1273,211 @@ paths:
       summary: 根据ID更新货位
       tags:
       - 货位管理
+  /menuapis/:id:
+    get:
+      consumes:
+      - application/json
+      operationId: "44"
+      parameters:
+      - description: 菜单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  items:
+                    type: integer
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据菜单ID获取API权限
+      tags:
+      - 权限管理
+    post:
+      consumes:
+      - application/json
+      operationId: "45"
+      parameters:
+      - description: 菜单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 菜单信息
+        in: body
+        name: menu_info
+        required: true
+        schema:
+          $ref: '#/definitions/auth.MenuNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  items:
+                    type: integer
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据菜单ID更新API权限
+      tags:
+      - 权限管理
+  /menus:
+    get:
+      consumes:
+      - application/json
+      operationId: "38"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 菜单名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/auth.UserMenu'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 菜单列表
+      tags:
+      - 菜单管理
+    post:
+      consumes:
+      - application/json
+      operationId: "39"
+      parameters:
+      - description: 菜单信息
+        in: body
+        name: menu_info
+        required: true
+        schema:
+          $ref: '#/definitions/auth.MenuNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.UserMenu'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建菜单
+      tags:
+      - 菜单管理
+  /menus/:id:
+    get:
+      consumes:
+      - application/json
+      operationId: "40"
+      parameters:
+      - description: 菜单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.UserMenu'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取菜单
+      tags:
+      - 菜单管理
+    put:
+      consumes:
+      - application/json
+      operationId: "41"
+      parameters:
+      - description: 菜单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 菜单信息
+        in: body
+        name: menu_info
+        required: true
+        schema:
+          $ref: '#/definitions/auth.MenuNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.UserMenu'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新菜单
+      tags:
+      - 菜单管理
   /packings:
     post:
       consumes:
@@ -1362,6 +1807,211 @@ paths:
       summary: 创建新收货单
       tags:
       - 收货管理
+  /rolemenus/:id:
+    get:
+      consumes:
+      - application/json
+      operationId: "42"
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  items:
+                    type: integer
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据角色ID获取菜单权限
+      tags:
+      - 权限管理
+    post:
+      consumes:
+      - application/json
+      operationId: "43"
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 菜单信息
+        in: body
+        name: menu_info
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RoleMenu'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  items:
+                    type: integer
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据角色ID更新菜单权限
+      tags:
+      - 权限管理
+  /roles:
+    get:
+      consumes:
+      - application/json
+      operationId: "30"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 角色名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/auth.UserRole'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 角色列表
+      tags:
+      - 角色管理
+    post:
+      consumes:
+      - application/json
+      operationId: "31"
+      parameters:
+      - description: 角色信息
+        in: body
+        name: role_info
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RoleNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.UserRole'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建角色
+      tags:
+      - 角色管理
+  /roles/:id:
+    get:
+      consumes:
+      - application/json
+      operationId: "32"
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.UserRole'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取角色
+      tags:
+      - 角色管理
+    put:
+      consumes:
+      - application/json
+      operationId: "33"
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 角色信息
+        in: body
+        name: role_info
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RoleNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.UserRole'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新角色
+      tags:
+      - 角色管理
   /salesorders:
     get:
       consumes:

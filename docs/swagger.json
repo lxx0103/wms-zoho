@@ -12,6 +12,235 @@
     "host": "0.0.0.0:8080",
     "basePath": "/",
     "paths": {
+        "/apis": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API管理"
+                ],
+                "summary": "API列表",
+                "operationId": "34",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "API名称",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "API路由",
+                        "name": "route",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/auth.UserAPI"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API管理"
+                ],
+                "summary": "新建API",
+                "operationId": "35",
+                "parameters": [
+                    {
+                        "description": "API信息",
+                        "name": "api_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.APINew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/auth.UserAPI"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/apis/:id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API管理"
+                ],
+                "summary": "根据ID获取API",
+                "operationId": "36",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "API ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/auth.UserAPI"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API管理"
+                ],
+                "summary": "根据ID更新API",
+                "operationId": "37",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "API ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "API信息",
+                        "name": "api_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.APINew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/auth.UserAPI"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/barcodes": {
             "get": {
                 "consumes": [
@@ -616,6 +845,342 @@
                 }
             }
         },
+        "/menuapis/:id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "权限管理"
+                ],
+                "summary": "根据菜单ID获取API权限",
+                "operationId": "44",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "菜单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "integer"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "权限管理"
+                ],
+                "summary": "根据菜单ID更新API权限",
+                "operationId": "45",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "菜单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "菜单信息",
+                        "name": "menu_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.MenuNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "integer"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/menus": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "菜单管理"
+                ],
+                "summary": "菜单列表",
+                "operationId": "38",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "菜单名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/auth.UserMenu"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "菜单管理"
+                ],
+                "summary": "新建菜单",
+                "operationId": "39",
+                "parameters": [
+                    {
+                        "description": "菜单信息",
+                        "name": "menu_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.MenuNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/auth.UserMenu"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/menus/:id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "菜单管理"
+                ],
+                "summary": "根据ID获取菜单",
+                "operationId": "40",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "菜单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/auth.UserMenu"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "菜单管理"
+                ],
+                "summary": "根据ID更新菜单",
+                "operationId": "41",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "菜单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "菜单信息",
+                        "name": "menu_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.MenuNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/auth.UserMenu"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/packings": {
             "post": {
                 "consumes": [
@@ -1139,6 +1704,342 @@
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/inventory.StockInRes"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/rolemenus/:id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "权限管理"
+                ],
+                "summary": "根据角色ID获取菜单权限",
+                "operationId": "42",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "integer"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "权限管理"
+                ],
+                "summary": "根据角色ID更新菜单权限",
+                "operationId": "43",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "菜单信息",
+                        "name": "menu_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.RoleMenu"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "integer"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/roles": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "角色管理"
+                ],
+                "summary": "角色列表",
+                "operationId": "30",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "角色名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/auth.UserRole"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "角色管理"
+                ],
+                "summary": "新建角色",
+                "operationId": "31",
+                "parameters": [
+                    {
+                        "description": "角色信息",
+                        "name": "role_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.RoleNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/auth.UserRole"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/roles/:id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "角色管理"
+                ],
+                "summary": "根据ID获取角色",
+                "operationId": "32",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/auth.UserRole"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "角色管理"
+                ],
+                "summary": "根据ID更新角色",
+                "operationId": "33",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "角色信息",
+                        "name": "role_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.RoleNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/auth.UserRole"
                                         }
                                     }
                                 }
@@ -1751,6 +2652,73 @@
         }
     },
     "definitions": {
+        "auth.APINew": {
+            "type": "object",
+            "required": [
+                "enabled",
+                "method",
+                "name",
+                "route"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "integer"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "route": {
+                    "type": "string"
+                }
+            }
+        },
+        "auth.MenuNew": {
+            "type": "object",
+            "required": [
+                "enabled",
+                "name"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "auth.RoleMenu": {
+            "type": "object",
+            "required": [
+                "ids"
+            ],
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "auth.RoleNew": {
+            "type": "object",
+            "required": [
+                "enabled",
+                "name"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "auth.SigninRequest": {
             "type": "object",
             "required": [
@@ -1804,6 +2772,90 @@
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "auth.UserAPI": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "route": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "auth.UserMenu": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "auth.UserRole": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
                     "type": "string"
                 }
             }

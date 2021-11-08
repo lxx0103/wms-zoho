@@ -19,3 +19,71 @@ type SignupRequest struct {
 	Name       string `json:"name" binding:"required"`
 	Email      string `json:"email" binding:"required,email"`
 }
+
+type RoleFilter struct {
+	Name     string `form:"name" binding:"omitempty,max=64,min=1"`
+	PageId   int    `form:"page_id" binding:"required,min=1"`
+	PageSize int    `form:"page_size" binding:"required,min=5,max=200"`
+}
+
+type RoleNew struct {
+	Name    string `json:"name" binding:"required,min=1,max=64"`
+	Enabled int    `json:"enabled" binding:"required,oneof=1 2"`
+	User    string `json:"user" swaggerignore:"true"`
+}
+
+type RoleID struct {
+	ID int64 `uri:"id" binding:"required,min=1"`
+}
+
+type APIFilter struct {
+	Name     string `form:"name" binding:"omitempty,max=64,min=1"`
+	Route    string `form:"route" binding:"omitempty,max=128,min=1"`
+	PageId   int    `form:"page_id" binding:"required,min=1"`
+	PageSize int    `form:"page_size" binding:"required,min=5,max=200"`
+}
+
+type APINew struct {
+	Name    string `json:"name" binding:"required,min=1,max=64"`
+	Route   string `json:"route" binding:"required,min=1,max=128"`
+	Method  string `json:"method" binding:"required,oneof=post put get"`
+	Enabled int    `json:"enabled" binding:"required,oneof=1 2"`
+	User    string `json:"user" swaggerignore:"true"`
+}
+
+type APIID struct {
+	ID int64 `uri:"id" binding:"required,min=1"`
+}
+
+type MenuFilter struct {
+	Name     string `form:"name" binding:"omitempty,max=64,min=1"`
+	PageId   int    `form:"page_id" binding:"required,min=1"`
+	PageSize int    `form:"page_size" binding:"required,min=5,max=200"`
+}
+
+type MenuNew struct {
+	Name    string `json:"name" binding:"required,min=1,max=64"`
+	Enabled int    `json:"enabled" binding:"required,oneof=1 2"`
+	User    string `json:"user" swaggerignore:"true"`
+}
+
+type MenuID struct {
+	ID int64 `uri:"id" binding:"required,min=1"`
+}
+
+type RoleMenu struct {
+	IDS []int64 `json:"ids" binding:"required"`
+}
+type RoleMenuNew struct {
+	IDS  []int64 `json:"ids" binding:"required"`
+	User string  `json:"_" swaggerignore:"true"`
+}
+
+type MenuAPI struct {
+	IDS []int64 `json:"ids" binding:"required"`
+}
+
+type MenuAPINew struct {
+	IDS  []int64 `json:"ids" binding:"required"`
+	User string  `json:"_" swaggerignore:"true"`
+}
