@@ -49,6 +49,7 @@ type AuthRepository interface {
 	NewRoleMenu(int64, RoleMenuNew) (int64, error)
 	GetMenuAPIByID(int64) ([]int64, error)
 	NewMenuAPI(int64, MenuAPINew) (int64, error)
+	GetMyMenu(int64) ([]UserMenu, error)
 }
 
 func (r *authRepository) GetCredential(signInfo SigninRequest) (UserAuth, error) {
@@ -372,14 +373,20 @@ func (r *authRepository) CreateMenu(info MenuNew) (int64, error) {
 		INSERT INTO user_menus
 		(
 			name,
+			action,
+			title,
+			path,
+			component,
+			is_hidden,
+			parent_id,
 			enabled,
 			created,
 			created_by,
 			updated,
 			updated_by
 		)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`, info.Name, info.Enabled, time.Now(), info.User, time.Now(), info.User)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.Name, info.Action, info.Title, info.Path, info.Component, info.IsHidden, info.ParentID, info.Enabled, time.Now(), info.User, time.Now(), info.User)
 	if err != nil {
 		return 0, err
 	}
@@ -396,6 +403,9 @@ func (r *authRepository) GetMenuCount(filter MenuFilter) (int, error) {
 	if v := filter.Name; v != "" {
 		where, args = append(where, "code like ?"), append(args, "%"+v+"%")
 	}
+	if v := filter.OnlyTop; v {
+		where, args = append(where, "parent_id = ?"), append(args, 0)
+	}
 	var count int
 	err := r.conn.Get(&count, `
 		SELECT count(1) as count 
@@ -411,6 +421,9 @@ func (r *authRepository) GetMenuList(filter MenuFilter) ([]UserMenu, error) {
 	where, args := []string{"1 = 1"}, []interface{}{}
 	if v := filter.Name; v != "" {
 		where, args = append(where, "code like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.OnlyTop; v {
+		where, args = append(where, "parent_id = ?"), append(args, 0)
 	}
 	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
 	args = append(args, filter.PageSize)
@@ -436,11 +449,17 @@ func (r *authRepository) UpdateMenu(id int64, info MenuNew) (int64, error) {
 	result, err := tx.Exec(`
 		Update user_menus SET 
 		name = ?,
+		action = ?,
+		title = ?,
+		path = ?,
+		component = ?,
+		is_hidden = ?
+		parent_id = ?
 		enabled = ?,
 		updated = ?,
 		updated_by = ? 
 		WHERE id = ?
-	`, info.Name, info.Enabled, time.Now(), info.User, id)
+	`, info.Name, info.Action, info.Title, info.Path, info.Component, info.IsHidden, info.ParentID, info.Enabled, time.Now(), info.User, id)
 	if err != nil {
 		return 0, err
 	}
@@ -558,4 +577,20 @@ func (r *authRepository) NewMenuAPI(menu_id int64, info MenuAPINew) (int64, erro
 	}
 	tx.Commit()
 	return rows, nil
+}
+func (r *authRepository) GetMyMenu(roleID int64) ([]UserMenu, error) {
+	var menu []UserMenu
+	err := r.conn.Select(&menu, `
+		SELECT um.* FROM user_role_menus urm 
+		LEFT JOIN user_menus um
+		ON urm.menu_id = um.id
+		WHERE urm.role_id = ?
+		AND um.enabled = 1 
+		AND urm.enabled = 1
+		ORDER BY parent_id ASC, ID ASC
+	`, roleID)
+	if err != nil {
+		return nil, err
+	}
+	return menu, nil
 }

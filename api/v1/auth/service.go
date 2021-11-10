@@ -38,6 +38,7 @@ type AuthService interface {
 	NewRoleMenu(int64, RoleMenuNew) ([]int64, error)
 	GetMenuAPIByID(int64) ([]int64, error)
 	NewMenuAPI(int64, MenuAPINew) ([]int64, error)
+	GetMyMenu(int64) ([]UserMenu, error)
 }
 
 func (s *authService) VerifyCredential(signinInfo SigninRequest) (user.UserProfile, error) {
@@ -252,5 +253,12 @@ func (s *authService) NewMenuAPI(id int64, info MenuAPINew) ([]int64, error) {
 		return nil, err
 	}
 	menu, err := repo.GetMenuAPIByID(id)
+	return menu, err
+}
+
+func (s *authService) GetMyMenu(roleID int64) ([]UserMenu, error) {
+	db := database.InitMySQL()
+	repo := NewAuthRepository(db)
+	menu, err := repo.GetMyMenu(roleID)
 	return menu, err
 }

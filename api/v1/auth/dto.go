@@ -57,14 +57,21 @@ type APIID struct {
 
 type MenuFilter struct {
 	Name     string `form:"name" binding:"omitempty,max=64,min=1"`
+	OnlyTop  bool   `form:"only_top" binding:"omitempty"`
 	PageId   int    `form:"page_id" binding:"required,min=1"`
 	PageSize int    `form:"page_size" binding:"required,min=5,max=200"`
 }
 
 type MenuNew struct {
-	Name    string `json:"name" binding:"required,min=1,max=64"`
-	Enabled int    `json:"enabled" binding:"required,oneof=1 2"`
-	User    string `json:"user" swaggerignore:"true"`
+	Name      string `json:"name" binding:"required,min=1,max=64"`
+	Action    string `json:"action" binding:"omitempty,min=1,max=64"`
+	Title     string `json:"title" binding:"required,min=1,max=64"`
+	Path      string `json:"path" binding:"omitempty,min=1,max=128"`
+	Component string `json:"component" binding:"omitempty,min=1,max=255"`
+	IsHidden  int64  `json:"is_hidden" binding:"required,oneof=1 2"`
+	ParentID  int64  `json:"parent_id" binding:"required,min=0"`
+	Enabled   int64  `json:"enabled" binding:"required,oneof=1 2"`
+	User      string `json:"user" swaggerignore:"true"`
 }
 
 type MenuID struct {
@@ -86,4 +93,15 @@ type MenuAPI struct {
 type MenuAPINew struct {
 	IDS  []int64 `json:"ids" binding:"required"`
 	User string  `json:"_" swaggerignore:"true"`
+}
+
+type MyMenuDetail struct {
+	Name      string         `json:"name" binding:"required,min=1,max=64"`
+	Action    string         `json:"action" binding:"omitempty,min=1,max=64"`
+	Title     string         `json:"title" binding:"required,min=1,max=64"`
+	Path      string         `json:"path" binding:"omitempty,min=1,max=128"`
+	Component string         `json:"component" binding:"omitempty,min=1,max=255"`
+	IsHidden  int64          `json:"is_hidden" binding:"required,oneof=1 2"`
+	Enabled   int64          `json:"enabled" binding:"required,oneof=1 2"`
+	Items     []MyMenuDetail `json:"items"`
 }

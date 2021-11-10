@@ -18,13 +18,28 @@ definitions:
     type: object
   auth.MenuNew:
     properties:
+      action:
+        type: string
+      component:
+        type: string
       enabled:
+        type: integer
+      is_hidden:
         type: integer
       name:
         type: string
+      parent_id:
+        type: integer
+      path:
+        type: string
+      title:
+        type: string
     required:
     - enabled
+    - is_hidden
     - name
+    - parent_id
+    - title
     type: object
   auth.RoleMenu:
     properties:
@@ -107,15 +122,27 @@ definitions:
     type: object
   auth.UserMenu:
     properties:
+      action:
+        type: string
+      component:
+        type: string
       created:
         type: string
       created_by:
         type: string
       enabled:
-        type: string
+        type: integer
       id:
         type: integer
+      is_hidden:
+        type: integer
       name:
+        type: string
+      parent_id:
+        type: integer
+      path:
+        type: string
+      title:
         type: string
       updated:
         type: string
@@ -753,6 +780,15 @@ definitions:
       updated_by:
         type: string
     type: object
+  user.UserUpdate:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      role_id:
+        type: integer
+    type: object
 host: 0.0.0.0:8080
 info:
   contact:
@@ -1362,6 +1398,10 @@ paths:
         in: query
         name: name
         type: string
+      - description: 只显示顶级菜单
+        in: query
+        name: only_top
+        type: boolean
       produces:
       - application/json
       responses:
@@ -1478,6 +1518,30 @@ paths:
       summary: 根据ID更新菜单
       tags:
       - 菜单管理
+  /mymenu:
+    get:
+      consumes:
+      - application/json
+      operationId: "46"
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 获取当前用户的前端路由
+      tags:
+      - 权限管理
   /packings:
     post:
       consumes:
@@ -2376,4 +2440,112 @@ paths:
       summary: 库存转移
       tags:
       - 货位管理
+  /users:
+    get:
+      consumes:
+      - application/json
+      operationId: "47"
+      parameters:
+      - description: 用户名
+        in: query
+        name: name
+        type: string
+      - description: 邮箱
+        in: query
+        name: email
+        type: string
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/user.UserProfile'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 用户列表
+      tags:
+      - 用户管理
+  /users/:id:
+    get:
+      consumes:
+      - application/json
+      operationId: "48"
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/user.UserProfile'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取用户
+      tags:
+      - 用户管理
+    put:
+      consumes:
+      - application/json
+      operationId: "49"
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 用户信息
+        in: body
+        name: menu_info
+        required: true
+        schema:
+          $ref: '#/definitions/user.UserUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/user.UserProfile'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新用户
+      tags:
+      - 用户管理
 swagger: "2.0"

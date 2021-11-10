@@ -34,7 +34,13 @@ type UserAPI struct {
 type UserMenu struct {
 	ID        int64     `db:"id" json:"id"`
 	Name      string    `db:"name" json:"name"`
-	Enabled   string    `db:"enabled" json:"enabled"`
+	Action    string    `db:"action" json:"action"`
+	Title     string    `db:"title" json:"title"`
+	Path      string    `db:"path" json:"path"`
+	Component string    `db:"component" json:"component"`
+	IsHidden  int64     `db:"is_hidden" json:"is_hidden"`
+	ParentID  int64     `db:"parent_id" json:"parent_id"`
+	Enabled   int64     `db:"enabled" json:"enabled"`
 	Created   time.Time `db:"created" json:"created"`
 	CreatedBy string    `db:"created_by" json:"created_by"`
 	Updated   time.Time `db:"updated" json:"updated"`

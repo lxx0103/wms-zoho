@@ -22,6 +22,7 @@ type UserRepository interface {
 	CreateUser(info UserProfile) (int64, error)
 	GetUserCount(filter UserFilter) (int, error)
 	GetUserList(filter UserFilter) ([]UserProfile, error)
+	UpdateUser(int64, UserUpdate) (int64, error)
 }
 
 func (r *userRepository) GetUserByID(id int64) (UserProfile, error) {
@@ -102,4 +103,30 @@ func (r *userRepository) GetUserList(filter UserFilter) ([]UserProfile, error) {
 		return nil, err
 	}
 	return users, nil
+}
+
+func (r *userRepository) UpdateUser(id int64, info UserUpdate) (int64, error) {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	result, err := tx.Exec(`
+		Update user_profiles SET 
+		name = ?,
+		email = ?,
+		role_id = ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE id = ?
+	`, info.Name, info.Email, info.RoleID, time.Now(), info.User, id)
+	if err != nil {
+		return 0, err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	tx.Commit()
+	return affected, nil
 }

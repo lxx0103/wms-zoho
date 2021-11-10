@@ -334,6 +334,7 @@ func UpdateAPI(c *gin.Context) {
 // @Param page_id query int true "页码"
 // @Param page_size query int true "每页行数（5/10/15/20）"
 // @Param name query string false "菜单名称"
+// @Param only_top query bool false "只显示顶级菜单"
 // @Success 200 object response.ListRes{data=[]UserMenu} 成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /menus [GET]
@@ -555,4 +556,49 @@ func NewMenuApi(c *gin.Context) {
 		return
 	}
 	response.Response(c, new)
+}
+
+// @Summary 获取当前用户的前端路由
+// @Id 46
+// @Tags 权限管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Success 200 object response.SuccessRes{data=interface{}} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /mymenu [GET]
+func GetMyMenu(c *gin.Context) {
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	role_id := claims.RoleID
+	authService := NewAuthService()
+	new, err := authService.GetMyMenu(role_id)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	res := make(map[int64]*MyMenuDetail)
+	for i := 0; i < len(new); i++ {
+		if new[i].ParentID == 0 {
+			var m MyMenuDetail
+			m.Action = new[i].Action
+			m.Component = new[i].Component
+			m.Name = new[i].Name
+			m.Title = new[i].Title
+			m.Path = new[i].Path
+			m.IsHidden = new[i].IsHidden
+			m.Enabled = new[i].Enabled
+			res[new[i].ID] = &m
+		} else {
+			var m MyMenuDetail
+			m.Action = new[i].Action
+			m.Component = new[i].Component
+			m.Name = new[i].Name
+			m.Title = new[i].Title
+			m.Path = new[i].Path
+			m.IsHidden = new[i].IsHidden
+			m.Enabled = new[i].Enabled
+			res[new[i].ParentID].Items = append(res[new[i].ParentID].Items, m)
+		}
+	}
+	response.Response(c, res)
 }

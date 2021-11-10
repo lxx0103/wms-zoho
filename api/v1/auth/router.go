@@ -24,5 +24,6 @@ func AuthRouter(g *gin.RouterGroup) {
 	g.POST("/rolemenus/:id", NewRoleMenu)
 	g.GET("/menuapis/:id", GetMenuApi)
 	g.POST("/menuapis/:id", NewMenuApi)
+	g.GET("/mymenu", GetMyMenu)
 
 }
