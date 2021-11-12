@@ -627,3 +627,81 @@ func NewPacking(c *gin.Context) {
 	}
 	response.Response(c, transactionID)
 }
+
+// @Summary 取消收货
+// @Id 51
+// @Tags 收货管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "采购订单ID"
+// @Success 200 object response.SuccessRes{data=int64} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /cancelreceives/:id [POST]
+func CancelReceive(c *gin.Context) {
+	var uri PurchaseOrderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	inventoryService := NewInventoryService()
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	res, err := inventoryService.CancelReceive(uri.ID, claims.Username)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, res)
+}
+
+// @Summary 取消捡货
+// @Id 52
+// @Tags 捡货管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "捡货订单ID"
+// @Success 200 object response.SuccessRes{data=int64} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /cancelpickings/:id [POST]
+func CancelPicking(c *gin.Context) {
+	var uri PickingOrderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	inventoryService := NewInventoryService()
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	res, err := inventoryService.CancelPicking(uri.ID, claims.Username)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, res)
+}
+
+// @Summary 取消打包
+// @Id 53
+// @Tags 捡货管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "销售订单ID"
+// @Success 200 object response.SuccessRes{data=int64} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /cancelpackings/:id [POST]
+func CancelPacking(c *gin.Context) {
+	var uri SalesOrderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	inventoryService := NewInventoryService()
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	res, err := inventoryService.CancelPacking(uri.ID, claims.Username)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, res)
+}

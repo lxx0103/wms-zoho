@@ -16,4 +16,7 @@ func Routers(g *gin.RouterGroup) {
 	g.POST("/pickingorders", NewPickingOrder)
 	g.POST("/pickings", NewPicking)
 	g.POST("/packings", NewPacking)
+	g.POST("/cancelreceives/:id", CancelReceive)
+	g.POST("/cancelpickings/:id", CancelPicking)
+	g.POST("/cancelpackings/:id", CancelPacking)
 }

@@ -24,6 +24,7 @@ type InventoryService interface {
 	UpdatePOItem(POItemUpdate) (bool, error)
 	//Receive Management
 	GetReceiveList(ReceiveFilter) (int, []Transaction, error)
+	CancelReceive(int64, string) (int64, error)
 	//SO Management
 	GetSalesOrderByID(int64) (*SalesOrder, error)
 	GetSalesOrderList(SalesOrderFilter) (int, []SalesOrder, error)
@@ -37,6 +38,8 @@ type InventoryService interface {
 	CreatePickingOrder([]string, string) (int64, error)
 	CreatePickingTransaction(info PickingTransactionNew) (int64, bool, error)
 	CreatePackingTransaction(info PackingTransactionNew) (int64, error)
+	CancelPicking(int64, string) (int64, error)
+	CancelPacking(int64, string) (int64, error)
 }
 
 func (s *inventoryService) GetItemByID(id int64) (Item, error) {
@@ -209,4 +212,22 @@ func (s *inventoryService) CreatePackingTransaction(info PackingTransactionNew) 
 	repo := NewInventoryRepository(db)
 	created, err := repo.CreatePackingTransaction(info)
 	return created, err
+}
+func (s *inventoryService) CancelReceive(poID int64, user string) (int64, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	res, err := repo.CancelReceive(poID, user)
+	return res, err
+}
+func (s *inventoryService) CancelPicking(poID int64, user string) (int64, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	res, err := repo.CancelPicking(poID, user)
+	return res, err
+}
+func (s *inventoryService) CancelPacking(poID int64, user string) (int64, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	res, err := repo.CancelPacking(poID, user)
+	return res, err
 }

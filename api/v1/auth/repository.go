@@ -453,8 +453,8 @@ func (r *authRepository) UpdateMenu(id int64, info MenuNew) (int64, error) {
 		title = ?,
 		path = ?,
 		component = ?,
-		is_hidden = ?
-		parent_id = ?
+		is_hidden = ?,
+		parent_id = ?,
 		enabled = ?,
 		updated = ?,
 		updated_by = ? 

@@ -31,6 +31,7 @@ type InventoryRepository interface {
 	GetPurchaseOrderList(filter PurchaseOrderFilter) ([]PurchaseOrder, error)
 	FilterPOItem(filter FilterPOItem) (*[]PurchaseOrderItem, error)
 	UpdatePOItem(info POItemUpdate) (bool, error)
+	CancelReceive(int64, string) (int64, error)
 	//Transaction
 	CreateTransaction(t TransactionNew) error
 	GetTransactionCount(filter ReceiveFilter) (int, error)
@@ -55,6 +56,8 @@ type InventoryRepository interface {
 	CreatePickingOrderDetail(PickingOrderDetailNew) (int64, error)
 	CreatePickingTransaction(PickingTransactionNew) (int64, bool, error)
 	CreatePackingTransaction(PackingTransactionNew) (int64, error)
+	CancelPicking(int64, string) (int64, error)
+	CancelPacking(int64, string) (int64, error)
 }
 
 func (r *inventoryRepository) GetItemByID(id int64) (Item, error) {
@@ -683,6 +686,22 @@ func (r *inventoryRepository) CreatePickingOrderDetail(info PickingOrderDetailNe
 		return 0, err
 	}
 	defer tx.Rollback()
+	_, err = tx.Exec(`		
+		INSERT INTO i_picking_order_logs 
+		(
+			picking_order_id,
+			transaction_id,
+			quantity,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		Values (?, ?, ?, ?, ?, ?, ?)
+	`, info.POID, info.TransactionID, info.Quantity, time.Now(), info.UserName, time.Now(), info.UserName)
+	if err != nil {
+		return 0, err
+	}
 	var exists int64
 	var pickingDetailID int64
 	err = r.conn.Get(&exists, `SELECT id FROM i_picking_order_details WHERE picking_order_id = ? AND location_code = ? LIMIT 1`, info.POID, info.LocationCode)
@@ -960,4 +979,231 @@ func (r *inventoryRepository) UpdateSOStatus(ids string, user string) error {
 		return err
 	}
 	return nil
+}
+
+func (r *inventoryRepository) CancelReceive(poID int64, user string) (int64, error) {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec(`
+		UPDATE i_purchase_order_items poi
+		LEFT JOIN i_items i
+		ON poi.item_id = i.id
+		SET i.stock_available = i.stock_available - poi.quantity_received,
+		i.stock = i.stock - poi.quantity_received,
+		i.updated = ?,
+		i.updated_by = ?
+		WHERE poi.po_id = ?
+	`, time.Now(), user, poID)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		UPDATE i_transactions t
+		LEFT JOIN s_locations l
+		ON t.location_code = l.code
+		SET l.quantity = l.quantity - t.quantity,
+		l.can_pick = l.can_pick - t.quantity,
+		l.available = l.available + t.quantity,
+		l.updated = ?,
+		l.updated_by = ?
+		WHERE t.po_id = ?
+	`, time.Now(), user, poID)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		Update i_purchase_order_items SET 
+		quantity_received = 0,
+		updated = ?,
+		updated_by = ?
+		WHERE po_id = ?
+	`, time.Now(), user, poID)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		DELETE FROM  i_transactions
+		WHERE po_id = ?
+	`, poID)
+	if err != nil {
+		return 0, err
+	}
+	tx.Commit()
+	return 1, nil
+}
+
+func (r *inventoryRepository) CancelPicking(poID int64, user string) (int64, error) {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec(`
+		UPDATE i_picking_order_items poi
+		LEFT JOIN i_items i
+		ON poi.item_id = i.id
+		SET i.stock_picking = i.stock_picking + poi.quantity_picked,
+		i.stock_packing = i.stock_packing - poi.quantity_picked,
+		i.updated = ?,
+		i.updated_by = ?
+		where poi.picking_order_id = ?
+	`, time.Now(), user, poID)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		UPDATE i_picking_order_items poi
+		LEFT JOIN i_items i
+		ON poi.item_id = i.id
+		SET i.stock_available = i.stock_available + poi.quantity,
+		i.stock_picking = i.stock_picking - poi.quantity,
+		i.updated = ?,
+		i.updated_by = ?
+		where poi.picking_order_id = ?
+	`, time.Now(), user, poID)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		UPDATE i_picking_order_details pod
+		LEFT JOIN s_locations l
+		ON pod.location_code = l.code
+		SET l.quantity = l.quantity + pod.quantity,
+		l.can_pick = l.can_pick + pod.quantity,
+		l.available = l.available - pod.quantity,
+		l.updated = ?,
+		l.updated_by = ?
+		WHERE pod.picking_order_id = ?
+	`, time.Now(), user, poID)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		UPDATE i_picking_order_logs pol
+		LEFT JOIN i_transactions t
+		ON pol.transaction_id = t.id
+		SET t.balance = t.balance + pol.quantity,
+		t.updated = ?,
+		t.updated_by = ?
+		WHERE pol.picking_order_id = ?
+	`, time.Now(), user, poID)
+	if err != nil {
+		return 0, err
+	}
+	var ids string
+	row := tx.QueryRow(`SELECT sales_orders FROM i_picking_orders WHERE id = ? LIMIT 1`, poID)
+	err = row.Scan(&ids)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		Update i_sales_orders SET
+		status = "CONFIRMED"
+		updated = ?,
+		updated_by = ?,
+		WHERE id in (`+ids+`)
+	`, time.Now(), user)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		Update i_sales_order_items SET
+		quantity_picked = 0
+		updated = ?,
+		updated_by = ?,
+		WHERE id in (`+ids+`)
+	`, time.Now(), user)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		DELETE FROM  i_picking_order_details
+		WHERE picking_order_id = ?
+	`, poID)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		DELETE FROM  i_picking_order_items
+		WHERE picking_order_id = ?
+	`, poID)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		DELETE FROM  i_picking_order_logs
+		WHERE picking_order_id = ?
+	`, poID)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		DELETE FROM  i_picking_orders
+		WHERE id = ?
+	`, poID)
+	if err != nil {
+		return 0, err
+	}
+	tx.Commit()
+	return 1, nil
+}
+
+func (r *inventoryRepository) CancelPacking(poID int64, user string) (int64, error) {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec(`
+		UPDATE i_purchase_order_items poi
+		LEFT JOIN i_items i
+		ON poi.item_id = i.id
+		SET i.stock_available = i.stock_available - poi.quantity_received,
+		i.stock = i.stock - poi.quantity_received,
+		i.updated = ?,
+		i.updated_by = ?
+		where poi.po_id = ?
+	`, time.Now(), user, poID)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		UPDATE i_transactions t
+		LEFT JOIN s_locations l
+		ON t.location_code = l.code
+		SET l.quantity = l.quantity - t.quantity,
+		l.can_pick = l.can_pick - t.quantity,
+		l.available = l.available + t.quantity,
+		l.updated = ?,
+		l.updated_by = ?,
+		WHERE t.po_id = 1
+	`, time.Now(), user, poID)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		Update i_purchase_order_items SET 
+		quantity_received = 0
+		updated = ?,
+		updated_by = ? 
+		WHERE po_id = ?
+	`, time.Now(), user, poID)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		DELETE FROM  i_transaction 
+		WHERE po_id = ?
+	`, poID)
+	if err != nil {
+		return 0, err
+	}
+	tx.Commit()
+	return 1, nil
 }
