@@ -292,7 +292,7 @@ func (r *inventoryRepository) UpdatePOItem(info POItemUpdate) (bool, error) {
 }
 
 func (r *inventoryRepository) GetTransactionCount(filter ReceiveFilter) (int, error) {
-	where, args := []string{"1 = 1"}, []interface{}{}
+	where, args := []string{"1 = 1  AND po_number != \"adjustment\""}, []interface{}{}
 	if v := filter.PONumber; v != "" {
 		where, args = append(where, "po_number = ?"), append(args, v)
 	}
@@ -314,7 +314,7 @@ func (r *inventoryRepository) GetTransactionCount(filter ReceiveFilter) (int, er
 }
 
 func (r *inventoryRepository) GetTransactionList(filter ReceiveFilter) ([]Transaction, error) {
-	where, args := []string{"1 = 1"}, []interface{}{}
+	where, args := []string{"1 = 1 AND po_number != \"adjustment\""}, []interface{}{}
 	if v := filter.PONumber; v != "" {
 		where, args = append(where, "po_number = ?"), append(args, v)
 	}
@@ -992,7 +992,7 @@ func (r *inventoryRepository) CancelReceive(poID int64, user string) (int64, err
 	}
 	defer tx.Rollback()
 	var canCancel int
-	row := tx.QueryRow(`SELECT count(1) FROM i_transactions WHERE po_id = ? AND quantity > balance`, poID)
+	row := tx.QueryRow(`SELECT count(1) FROM i_transactions WHERE po_id = ? AND quantity > balance AND po_number != "adjustment"`, poID)
 	err = row.Scan(&canCancel)
 	if err != nil {
 		return 0, err
