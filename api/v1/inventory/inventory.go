@@ -705,3 +705,59 @@ func CancelPacking(c *gin.Context) {
 	}
 	response.Response(c, res)
 }
+
+// @Summary 库存调整
+// @Id 54
+// @Tags 库存管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param info body AdjustmentInfo true "调整信息"
+// @Success 200 object response.SuccessRes{data=int64} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /adjustments [POST]
+func NewAdjustment(c *gin.Context) {
+	var info AdjustmentInfo
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	inventoryService := NewInventoryService()
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	info.UserName = claims.Username
+	res, err := inventoryService.CreateAdjustment(info)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, res)
+}
+
+// @Summary Adjustment列表
+// @Id 55
+// @Tags 库存管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param sku query string false "SKU"
+// @Param location_code query string false "Location Code"
+// @Success 200 object response.ListRes{data=[]Adjustment} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /adjustments [GET]
+func GetAdjustmentList(c *gin.Context) {
+	var filter AdjustmentFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	inventoryService := NewInventoryService()
+	count, list, err := inventoryService.GetAdjustmentList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageId, filter.PageSize, count, list)
+}

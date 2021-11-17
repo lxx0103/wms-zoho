@@ -40,6 +40,9 @@ type InventoryService interface {
 	CreatePackingTransaction(info PackingTransactionNew) (int64, error)
 	CancelPicking(int64, string) (int64, error)
 	CancelPacking(int64, string) (int64, error)
+	//Adjustment
+	CreateAdjustment(AdjustmentInfo) (int64, error)
+	GetAdjustmentList(AdjustmentFilter) (int, []Adjustment, error)
 }
 
 func (s *inventoryService) GetItemByID(id int64) (Item, error) {
@@ -230,4 +233,25 @@ func (s *inventoryService) CancelPacking(poID int64, user string) (int64, error)
 	repo := NewInventoryRepository(db)
 	res, err := repo.CancelPacking(poID, user)
 	return res, err
+}
+
+func (s *inventoryService) CreateAdjustment(info AdjustmentInfo) (int64, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	res, err := repo.CreateAdjustment(info)
+	return res, err
+}
+
+func (s *inventoryService) GetAdjustmentList(filter AdjustmentFilter) (int, []Adjustment, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	count, err := repo.GetAdjustmentCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := repo.GetAdjustmentList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
 }

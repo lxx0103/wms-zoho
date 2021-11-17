@@ -58,6 +58,10 @@ type InventoryRepository interface {
 	CreatePackingTransaction(PackingTransactionNew) (int64, error)
 	CancelPicking(int64, string) (int64, error)
 	CancelPacking(int64, string) (int64, error)
+	//Adjustment
+	CreateAdjustment(AdjustmentInfo) (int64, error)
+	GetAdjustmentCount(AdjustmentFilter) (int, error)
+	GetAdjustmentList(AdjustmentFilter) ([]Adjustment, error)
 }
 
 func (r *inventoryRepository) GetItemByID(id int64) (Item, error) {
@@ -987,6 +991,15 @@ func (r *inventoryRepository) CancelReceive(poID int64, user string) (int64, err
 		return 0, err
 	}
 	defer tx.Rollback()
+	var canCancel int
+	row := tx.QueryRow(`SELECT count(1) FROM i_transactions WHERE po_id = ? AND quantity > balance`, poID)
+	err = row.Scan(&canCancel)
+	if err != nil {
+		return 0, err
+	}
+	if canCancel != 0 {
+		return 0, errors.New("YOU CAN NOT CANCEL THE RECEIVING WHEN IT IS ALREADY PICKED")
+	}
 
 	_, err = tx.Exec(`
 		UPDATE i_purchase_order_items poi
@@ -1042,7 +1055,21 @@ func (r *inventoryRepository) CancelPicking(poID int64, user string) (int64, err
 		return 0, err
 	}
 	defer tx.Rollback()
-
+	var ids string
+	row := tx.QueryRow(`SELECT sales_orders FROM i_picking_orders WHERE id = ? LIMIT 1`, poID)
+	err = row.Scan(&ids)
+	if err != nil {
+		return 0, err
+	}
+	var canCancel int
+	row1 := tx.QueryRow(`SELECT count(1) FROM i_sales_order_items WHERE so_id in (` + ids + `) AND quantity_packed > 0`)
+	err = row1.Scan(&canCancel)
+	if err != nil {
+		return 0, err
+	}
+	if canCancel != 0 {
+		return 0, errors.New("YOU CAN NOT CANCEL THE PICKING WHEN SALESORDER IS ALREADY PACKED")
+	}
 	_, err = tx.Exec(`
 		UPDATE i_picking_order_items poi
 		LEFT JOIN i_items i
@@ -1095,17 +1122,11 @@ func (r *inventoryRepository) CancelPicking(poID int64, user string) (int64, err
 	if err != nil {
 		return 0, err
 	}
-	var ids string
-	row := tx.QueryRow(`SELECT sales_orders FROM i_picking_orders WHERE id = ? LIMIT 1`, poID)
-	err = row.Scan(&ids)
-	if err != nil {
-		return 0, err
-	}
 	_, err = tx.Exec(`
 		Update i_sales_orders SET
-		status = "CONFIRMED"
+		status = "CONFIRMED",
 		updated = ?,
-		updated_by = ?,
+		updated_by = ?
 		WHERE id in (`+ids+`)
 	`, time.Now(), user)
 	if err != nil {
@@ -1113,10 +1134,10 @@ func (r *inventoryRepository) CancelPicking(poID int64, user string) (int64, err
 	}
 	_, err = tx.Exec(`
 		Update i_sales_order_items SET
-		quantity_picked = 0
+		quantity_picked = 0,
 		updated = ?,
-		updated_by = ?,
-		WHERE id in (`+ids+`)
+		updated_by = ?
+		WHERE so_id in (`+ids+`)
 	`, time.Now(), user)
 	if err != nil {
 		return 0, err
@@ -1143,6 +1164,13 @@ func (r *inventoryRepository) CancelPicking(poID int64, user string) (int64, err
 		return 0, err
 	}
 	_, err = tx.Exec(`
+		DELETE FROM  i_picking_transactions
+		WHERE po_id = ?
+	`, poID)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
 		DELETE FROM  i_picking_orders
 		WHERE id = ?
 	`, poID)
@@ -1153,7 +1181,7 @@ func (r *inventoryRepository) CancelPicking(poID int64, user string) (int64, err
 	return 1, nil
 }
 
-func (r *inventoryRepository) CancelPacking(poID int64, user string) (int64, error) {
+func (r *inventoryRepository) CancelPacking(soID int64, user string) (int64, error) {
 	tx, err := r.conn.Begin()
 	if err != nil {
 		return 0, err
@@ -1161,49 +1189,291 @@ func (r *inventoryRepository) CancelPacking(poID int64, user string) (int64, err
 	defer tx.Rollback()
 
 	_, err = tx.Exec(`
-		UPDATE i_purchase_order_items poi
+		UPDATE i_sales_order_items soi
 		LEFT JOIN i_items i
-		ON poi.item_id = i.id
-		SET i.stock_available = i.stock_available - poi.quantity_received,
-		i.stock = i.stock - poi.quantity_received,
+		ON soi.item_id = i.id
+		SET i.stock_packing = i.stock_packing + soi.quantity_packed,
+		i.stock = i.stock + soi.quantity_packed,
 		i.updated = ?,
 		i.updated_by = ?
-		where poi.po_id = ?
-	`, time.Now(), user, poID)
+		where soi.so_id = ?
+	`, time.Now(), user, soID)
 	if err != nil {
 		return 0, err
 	}
 	_, err = tx.Exec(`
-		UPDATE i_transactions t
-		LEFT JOIN s_locations l
-		ON t.location_code = l.code
-		SET l.quantity = l.quantity - t.quantity,
-		l.can_pick = l.can_pick - t.quantity,
-		l.available = l.available + t.quantity,
-		l.updated = ?,
-		l.updated_by = ?,
-		WHERE t.po_id = 1
-	`, time.Now(), user, poID)
+		Update i_sales_orders SET
+		status = "PICKED",
+		updated = ?,
+		updated_by = ?
+		WHERE id =?
+	`, time.Now(), user, soID)
 	if err != nil {
 		return 0, err
 	}
 	_, err = tx.Exec(`
-		Update i_purchase_order_items SET 
-		quantity_received = 0
+		Update i_sales_order_items SET 
+		quantity_packed = 0,
 		updated = ?,
 		updated_by = ? 
-		WHERE po_id = ?
-	`, time.Now(), user, poID)
+		WHERE so_id = ?
+	`, time.Now(), user, soID)
 	if err != nil {
 		return 0, err
 	}
 	_, err = tx.Exec(`
-		DELETE FROM  i_transaction 
-		WHERE po_id = ?
-	`, poID)
+		DELETE FROM  i_packing_transactions 
+		WHERE so_id = ?
+	`, soID)
 	if err != nil {
 		return 0, err
 	}
 	tx.Commit()
 	return 1, nil
+}
+
+func (r *inventoryRepository) CreateAdjustment(info AdjustmentInfo) (int64, error) {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	result, err := tx.Exec(`
+		INSERT INTO i_adjustments
+		(
+			location_code,
+			quantity,
+			remark,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, info.Code, info.Quantity, info.Remark, time.Now(), info.UserName, time.Now(), info.UserName)
+	if err != nil {
+		return 0, err
+	}
+	adjustmentID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		UPDATE i_adjustments a
+		LEFT join s_locations l
+		ON a.location_code = l.code 
+		LEFT join i_items i
+		ON l.sku = i.sku
+		LEFT JOIN s_shelves s
+		ON l.shelf_id = s.id
+		SET a.item_name = i.name,
+		a.sku = l.sku,
+		a.shelf_code = s.code,
+		a.shelf_location = s.location,
+		a.location_level = l.level,
+		a.updated = ?,
+		a.updated_by = ?
+		where a.id = ?
+	`, time.Now(), info.UserName, adjustmentID)
+	if err != nil {
+		return 0, err
+	}
+	var nowQuantity int64
+	var capacity int64
+	var canPick int64
+	row := tx.QueryRow(`SELECT capacity,quantity,can_pick FROM s_locations WHERE code = ?`, info.Code)
+	err = row.Scan(&capacity, &nowQuantity, &canPick)
+	if err != nil {
+		return 0, err
+	}
+	if info.Quantity < 0 {
+		adjustQuantity := -info.Quantity
+		if canPick-adjustQuantity < 0 {
+			return 0, errors.New("QUANTITY NOT ENOUGH")
+		}
+		for adjustQuantity > 0 {
+			var balance int64
+			var id int64
+			transactionRow := tx.QueryRow(`SELECT id, balance FROM i_transactions WHERE location_code = ? AND balance > 0  ORDER BY id ASC LIMIT 1`, info.Code)
+			err = transactionRow.Scan(&id, &balance)
+			if err != nil {
+				return 0, err
+			}
+			if balance > adjustQuantity {
+				_, err = tx.Exec(`
+					UPDATE i_transactions
+					SET balance = balance - ?,
+					updated = ?,
+					updated_by = ?
+					where id = ?
+				`, adjustQuantity, time.Now(), info.UserName, id)
+				if err != nil {
+					return 0, err
+				}
+				_, err := tx.Exec(`
+					INSERT INTO i_adjustment_logs
+					(
+						adjustment_id,
+						transaction_id,
+						quantity,
+						created,
+						created_by,
+						updated,
+						updated_by
+					)
+					VALUES (?, ?, ?, ?, ?, ?, ?)
+				`, adjustmentID, id, adjustQuantity, time.Now(), info.UserName, time.Now(), info.UserName)
+				if err != nil {
+					return 0, err
+				}
+				adjustQuantity = 0
+			} else {
+				_, err = tx.Exec(`
+					UPDATE i_transactions
+					SET balance = 0,
+					updated = ?,
+					updated_by = ?
+					where id = ?
+				`, time.Now(), info.UserName, id)
+				if err != nil {
+					return 0, err
+				}
+				_, err := tx.Exec(`
+					INSERT INTO i_adjustment_logs
+					(
+						adjustment_id,
+						transaction_id,
+						quantity,
+						created,
+						created_by,
+						updated,
+						updated_by
+					)
+					VALUES (?, ?, ?, ?, ?, ?, ?)
+				`, adjustmentID, id, balance, time.Now(), info.UserName, time.Now(), info.UserName)
+				if err != nil {
+					return 0, err
+				}
+				adjustQuantity = adjustQuantity - balance
+			}
+		}
+	} else {
+		if capacity < info.Quantity+nowQuantity {
+			return 0, errors.New("CAPACITY NOT ENOUGH")
+		}
+		trans, err := tx.Exec(`
+			INSERT INTO i_transactions
+			(
+				po_id,
+				po_number,
+				quantity,
+				balance,
+				location_code,
+				enabled,
+				created,
+				created_by,
+				updated,
+				updated_by
+			)
+			VALUES (?, "adjustment", ?, ?, ?, ?, ?, ?, ?, ?)
+		`, adjustmentID, info.Quantity, info.Quantity, info.Code, 1, time.Now(), info.UserName, time.Now(), info.UserName)
+		if err != nil {
+			return 0, err
+		}
+
+		transID, err := trans.LastInsertId()
+		if err != nil {
+			return 0, err
+		}
+		_, err = tx.Exec(`
+			UPDATE i_transactions t
+			LEFT join s_locations l
+			ON t.location_code = l.code 
+			LEFT join i_items i
+			ON l.sku = i.sku
+			LEFT JOIN s_shelves s
+			ON l.shelf_id = s.id
+			SET t.item_name = i.name,
+			t.sku = l.sku,
+			t.shelf_code = s.code,
+			t.shelf_location = s.location,
+			t.location_level = l.level,
+			t.updated = ?,
+			t.updated_by = ?
+			where t.id = ?
+		`, time.Now(), info.UserName, transID)
+		if err != nil {
+			return 0, err
+		}
+	}
+	_, err = tx.Exec(`
+		Update s_locations SET 
+		quantity = quantity + ?,
+		can_pick = can_pick + ?,
+		available = available - ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE code = ?
+	`, info.Quantity, info.Quantity, info.Quantity, time.Now(), info.UserName, info.Code)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
+		Update s_locations l
+		LEFT JOIN i_items i
+		ON l.sku = i.sku
+		SET i.stock = i.stock + ?,
+		i.stock_available = i.stock_available + ?,
+		i.updated = ?,
+		i.updated_by = ? 
+		WHERE l.code = ?
+	`, info.Quantity, info.Quantity, time.Now(), info.UserName, info.Code)
+	if err != nil {
+		return 0, err
+	}
+	tx.Commit()
+	return 1, nil
+}
+
+func (r *inventoryRepository) GetAdjustmentCount(filter AdjustmentFilter) (int, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.SKU; v != "" {
+		where, args = append(where, "sku like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.LocationCode; v != "" {
+		where, args = append(where, "location_code like ?"), append(args, "%"+v+"%")
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count 
+		FROM i_adjustments 
+		WHERE `+strings.Join(where, " AND "), args...)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *inventoryRepository) GetAdjustmentList(filter AdjustmentFilter) ([]Adjustment, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.SKU; v != "" {
+		where, args = append(where, "sku like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.LocationCode; v != "" {
+		where, args = append(where, "location_code like ?"), append(args, "%"+v+"%")
+	}
+	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var adjustments []Adjustment
+	err := r.conn.Select(&adjustments, `
+		SELECT * 
+		FROM i_adjustments 
+		WHERE `+strings.Join(where, " AND ")+`
+		ORDER BY id desc
+		LIMIT ?, ?
+	`, args...)
+	if err != nil {
+		return nil, err
+	}
+	return adjustments, nil
 }

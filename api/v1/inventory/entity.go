@@ -170,3 +170,19 @@ type PickingTransaction struct {
 	Updated       time.Time `db:"updated" json:"updated"`
 	UpdatedBy     string    `db:"updated_by" json:"updated_by"`
 }
+
+type Adjustment struct {
+	ID            int64     `db:"id" json:"id"`
+	SKU           string    `db:"sku" json:"sku"`
+	ItemName      string    `db:"item_name" json:"item_name"`
+	LocationCode  string    `db:"location_code" json:"location_code"`
+	LocationLevel string    `db:"location_level" json:"location_level"`
+	ShelfCode     string    `db:"shelf_code" json:"shelf_code"`
+	ShelfLocation string    `db:"shelf_location" json:"shelf_location"`
+	Quantity      int64     `db:"quantity" json:"quantity"`
+	Remark        string    `db:"remark" json:"remark"`
+	Created       time.Time `db:"created" json:"created"`
+	CreatedBy     string    `db:"created_by" json:"created_by"`
+	Updated       time.Time `db:"updated" json:"updated"`
+	UpdatedBy     string    `db:"updated_by" json:"updated_by"`
+}

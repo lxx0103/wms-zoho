@@ -200,3 +200,19 @@ type PickingResponse struct {
 	TransactionID int64
 	IsCompleted   bool
 }
+type LocationID struct {
+	ID int64 `uri:"id" binding:"required,min=1"`
+}
+
+type AdjustmentInfo struct {
+	Code     string `json:"code" binding:"required"`
+	Quantity int64  `json:"quantity" binding:"required"`
+	Remark   string `json:"remark" binding:"required"`
+	UserName string `json:"user_name"`
+}
+type AdjustmentFilter struct {
+	SKU          string `form:"sku" binding:"omitempty,max=64,min=1"`
+	LocationCode string `form:"location_code" binding:"omitempty,max=64,min=1"`
+	PageId       int    `form:"page_id" binding:"required,min=1"`
+	PageSize     int    `form:"page_size" binding:"required,min=5,max=200"`
+}

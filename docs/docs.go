@@ -26,6 +26,128 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/adjustments": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "库存管理"
+                ],
+                "summary": "Adjustment列表",
+                "operationId": "55",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "SKU",
+                        "name": "sku",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Location Code",
+                        "name": "location_code",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/inventory.Adjustment"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "库存管理"
+                ],
+                "summary": "库存调整",
+                "operationId": "54",
+                "parameters": [
+                    {
+                        "description": "调整信息",
+                        "name": "info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/inventory.AdjustmentInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/apis": {
             "get": {
                 "consumes": [
@@ -469,6 +591,156 @@ var doc = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/setting.Barcode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/cancelpackings/:id": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "捡货管理"
+                ],
+                "summary": "取消打包",
+                "operationId": "53",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "销售订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/cancelpickings/:id": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "捡货管理"
+                ],
+                "summary": "取消捡货",
+                "operationId": "52",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "捡货订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/cancelreceives/:id": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "收货管理"
+                ],
+                "summary": "取消收货",
+                "operationId": "51",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "采购订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "integer"
                                         }
                                     }
                                 }
@@ -3136,6 +3408,72 @@ var doc = `{
                 }
             }
         },
+        "inventory.Adjustment": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "location_code": {
+                    "type": "string"
+                },
+                "location_level": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "shelf_code": {
+                    "type": "string"
+                },
+                "shelf_location": {
+                    "type": "string"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventory.AdjustmentInfo": {
+            "type": "object",
+            "required": [
+                "code",
+                "quantity",
+                "remark"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
+                }
+            }
+        },
         "inventory.Item": {
             "type": "object",
             "properties": {
@@ -4064,6 +4402,11 @@ var doc = `{
         },
         "user.UserUpdate": {
             "type": "object",
+            "required": [
+                "email",
+                "name",
+                "role_id"
+            ],
             "properties": {
                 "email": {
                     "type": "string"

@@ -166,6 +166,50 @@ definitions:
       updated_by:
         type: string
     type: object
+  inventory.Adjustment:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: integer
+      item_name:
+        type: string
+      location_code:
+        type: string
+      location_level:
+        type: string
+      quantity:
+        type: integer
+      remark:
+        type: string
+      shelf_code:
+        type: string
+      shelf_location:
+        type: string
+      sku:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  inventory.AdjustmentInfo:
+    properties:
+      code:
+        type: string
+      quantity:
+        type: integer
+      remark:
+        type: string
+      user_name:
+        type: string
+    required:
+    - code
+    - quantity
+    - remark
+    type: object
   inventory.Item:
     properties:
       created:
@@ -788,6 +832,10 @@ definitions:
         type: string
       role_id:
         type: integer
+    required:
+    - email
+    - name
+    - role_id
     type: object
 host: 0.0.0.0:8080
 info:
@@ -798,6 +846,81 @@ info:
   title: WMS API
   version: "1.0"
 paths:
+  /adjustments:
+    get:
+      consumes:
+      - application/json
+      operationId: "55"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: SKU
+        in: query
+        name: sku
+        type: string
+      - description: Location Code
+        in: query
+        name: location_code
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/inventory.Adjustment'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: Adjustment列表
+      tags:
+      - 库存管理
+    post:
+      consumes:
+      - application/json
+      operationId: "54"
+      parameters:
+      - description: 调整信息
+        in: body
+        name: info
+        required: true
+        schema:
+          $ref: '#/definitions/inventory.AdjustmentInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: integer
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 库存调整
+      tags:
+      - 库存管理
   /apis:
     get:
       consumes:
@@ -1078,6 +1201,96 @@ paths:
       summary: 根据ID更新条码
       tags:
       - 条码管理
+  /cancelpackings/:id:
+    post:
+      consumes:
+      - application/json
+      operationId: "53"
+      parameters:
+      - description: 销售订单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: integer
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 取消打包
+      tags:
+      - 捡货管理
+  /cancelpickings/:id:
+    post:
+      consumes:
+      - application/json
+      operationId: "52"
+      parameters:
+      - description: 捡货订单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: integer
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 取消捡货
+      tags:
+      - 捡货管理
+  /cancelreceives/:id:
+    post:
+      consumes:
+      - application/json
+      operationId: "51"
+      parameters:
+      - description: 采购订单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: integer
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 取消收货
+      tags:
+      - 收货管理
   /items:
     get:
       consumes:
