@@ -1039,6 +1039,16 @@ func (r *inventoryRepository) CancelReceive(poID int64, user string) (int64, err
 		return 0, err
 	}
 	_, err = tx.Exec(`
+		Update i_purchase_orders SET 
+		status = "CONFIRM",
+		updated = ?,
+		updated_by = ?
+		WHERE id = ?
+	`, time.Now(), user, poID)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(`
 		DELETE FROM  i_transactions
 		WHERE po_id = ?
 	`, poID)
