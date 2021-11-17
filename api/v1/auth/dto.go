@@ -27,9 +27,10 @@ type RoleFilter struct {
 }
 
 type RoleNew struct {
-	Name    string `json:"name" binding:"required,min=1,max=64"`
-	Enabled int    `json:"enabled" binding:"required,oneof=1 2"`
-	User    string `json:"user" swaggerignore:"true"`
+	Name     string `json:"name" binding:"required,min=1,max=64"`
+	Priority int64  `json:"priority" binding:"required,min=1,max=98"`
+	Enabled  int    `json:"enabled" binding:"required,oneof=1 2"`
+	User     string `json:"user" swaggerignore:"true"`
 }
 
 type RoleID struct {

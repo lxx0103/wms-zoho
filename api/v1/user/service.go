@@ -16,7 +16,7 @@ type UserService interface {
 	GetUserByID(int64) (UserProfile, error)
 	CreateNewUser(UserProfile) (UserProfile, error)
 	GetUserList(UserFilter) (int, []UserProfile, error)
-	UpdateUser(int64, UserUpdate) (UserProfile, error)
+	UpdateUser(int64, UserUpdate, int64) (UserProfile, error)
 }
 
 func (s *userService) GetUserByID(id int64) (UserProfile, error) {
@@ -51,10 +51,10 @@ func (s *userService) GetUserList(filter UserFilter) (int, []UserProfile, error)
 	return count, list, err
 }
 
-func (s *userService) UpdateUser(userID int64, info UserUpdate) (UserProfile, error) {
+func (s *userService) UpdateUser(userID int64, info UserUpdate, roleID int64) (UserProfile, error) {
 	db := database.InitMySQL()
 	repo := NewUserRepository(db)
-	_, err := repo.UpdateUser(userID, info)
+	_, err := repo.UpdateUser(userID, info, roleID)
 	if err != nil {
 		return UserProfile{}, err
 	}

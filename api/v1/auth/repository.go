@@ -167,14 +167,15 @@ func (r *authRepository) CreateRole(info RoleNew) (int64, error) {
 		INSERT INTO user_roles
 		(
 			name,
+			priority,
 			enabled,
 			created,
 			created_by,
 			updated,
 			updated_by
 		)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`, info.Name, info.Enabled, time.Now(), info.User, time.Now(), info.User)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, info.Name, info.Priority, info.Enabled, time.Now(), info.User, time.Now(), info.User)
 	if err != nil {
 		return 0, err
 	}
@@ -231,11 +232,12 @@ func (r *authRepository) UpdateRole(id int64, info RoleNew) (int64, error) {
 	result, err := tx.Exec(`
 		Update user_roles SET 
 		name = ?,
+		priority = ?,
 		enabled = ?,
 		updated = ?,
 		updated_by = ? 
 		WHERE id = ?
-	`, info.Name, info.Enabled, time.Now(), info.User, id)
+	`, info.Name, info.Priority, info.Enabled, time.Now(), info.User, id)
 	if err != nil {
 		return 0, err
 	}

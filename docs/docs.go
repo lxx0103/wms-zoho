@@ -3238,7 +3238,8 @@ var doc = `{
             "type": "object",
             "required": [
                 "enabled",
-                "name"
+                "name",
+                "priority"
             ],
             "properties": {
                 "enabled": {
@@ -3246,6 +3247,9 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
                 }
             }
         },
@@ -3399,6 +3403,9 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
                 },
                 "updated": {
                     "type": "string"

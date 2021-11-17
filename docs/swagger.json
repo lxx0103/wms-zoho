@@ -3224,7 +3224,8 @@
             "type": "object",
             "required": [
                 "enabled",
-                "name"
+                "name",
+                "priority"
             ],
             "properties": {
                 "enabled": {
@@ -3232,6 +3233,9 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
                 }
             }
         },
@@ -3385,6 +3389,9 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
                 },
                 "updated": {
                     "type": "string"

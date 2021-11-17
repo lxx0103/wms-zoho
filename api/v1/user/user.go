@@ -106,7 +106,7 @@ func UpdateUser(c *gin.Context) {
 	claims := c.MustGet("claims").(*service.CustomClaims)
 	user.User = claims.Username
 	authService := NewUserService()
-	new, err := authService.UpdateUser(uri.ID, user)
+	new, err := authService.UpdateUser(uri.ID, user, claims.RoleID)
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
 		return

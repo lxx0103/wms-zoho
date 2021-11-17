@@ -14,6 +14,7 @@ type UserAuth struct {
 type UserRole struct {
 	ID        int64     `db:"id" json:"id"`
 	Name      string    `db:"name" json:"name"`
+	Priority  int64     `db:"priority" json:"priority"`
 	Enabled   string    `db:"enabled" json:"enabled"`
 	Created   time.Time `db:"created" json:"created"`
 	CreatedBy string    `db:"created_by" json:"created_by"`

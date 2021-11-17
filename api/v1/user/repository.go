@@ -1,6 +1,7 @@
 package user
 
 import (
+	"errors"
 	"strings"
 	"time"
 
@@ -22,7 +23,7 @@ type UserRepository interface {
 	CreateUser(info UserProfile) (int64, error)
 	GetUserCount(filter UserFilter) (int, error)
 	GetUserList(filter UserFilter) ([]UserProfile, error)
-	UpdateUser(int64, UserUpdate) (int64, error)
+	UpdateUser(int64, UserUpdate, int64) (int64, error)
 }
 
 func (r *userRepository) GetUserByID(id int64) (UserProfile, error) {
@@ -105,12 +106,34 @@ func (r *userRepository) GetUserList(filter UserFilter) ([]UserProfile, error) {
 	return users, nil
 }
 
-func (r *userRepository) UpdateUser(id int64, info UserUpdate) (int64, error) {
+func (r *userRepository) UpdateUser(id int64, info UserUpdate, roleID int64) (int64, error) {
 	tx, err := r.conn.Begin()
 	if err != nil {
 		return 0, err
 	}
 	defer tx.Rollback()
+	var modifier, target, now int64
+	rowModifier := tx.QueryRow(`SELECT priority FROM user_roles WHERE id = ? LIMIT 1`, roleID)
+	err = rowModifier.Scan(&modifier)
+	if err != nil {
+		return 0, err
+	}
+	rowTarget := tx.QueryRow(`SELECT priority FROM user_roles WHERE id = ? LIMIT 1`, info.RoleID)
+	err = rowTarget.Scan(&target)
+	if err != nil {
+		return 0, err
+	}
+	if modifier < target {
+		return 0, errors.New("YOU HAVE NO PRIVILEGE TO CHANGE TO THIS ROLE")
+	}
+	rowNow := tx.QueryRow(`SELECT r.priority FROM user_profiles p LEFT JOIN user_roles r ON p.role_id = r.id WHERE p.id = ? LIMIT 1`, id)
+	err = rowNow.Scan(&now)
+	if err != nil {
+		return 0, err
+	}
+	if modifier < now {
+		return 0, errors.New("YOU HAVE NO PRIVILEGE TO MODIFY THIS USER")
+	}
 	result, err := tx.Exec(`
 		Update user_profiles SET 
 		name = ?,
