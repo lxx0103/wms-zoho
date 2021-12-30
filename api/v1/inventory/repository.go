@@ -346,7 +346,7 @@ func (r *inventoryRepository) GetTransactionToPick(sku string) (*Transaction, er
 		FROM i_transactions 
 		WHERE sku = ?
 		AND balance > 0
-		ORDER BY created ASC
+		ORDER BY created ASC, id ASC
 		LIMIT 1
 	`, sku)
 	if err != nil {

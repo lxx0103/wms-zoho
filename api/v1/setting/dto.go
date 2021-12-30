@@ -21,7 +21,7 @@ type ShelfID struct {
 
 type LocationFilter struct {
 	Code     string `form:"code" binding:"omitempty,max=64,min=1"`
-	Level    string `json:"level" binding:"omitempty,min=1,max=64"`
+	Level    string `form:"level" binding:"omitempty,min=1,max=64"`
 	ShelfID  int64  `form:"shelf_id" binding:"omitempty,min=1"`
 	SKU      string `form:"sku" binding:"omitempty,max=64,min=1"`
 	IsAlert  bool   `form:"is_alert" binding:"omitempty"`
@@ -84,4 +84,8 @@ type TransferFilter struct {
 	To       string `form:"to" binding:"omitempty,max=64,min=1"`
 	PageId   int    `form:"page_id" binding:"required,min=1"`
 	PageSize int    `form:"page_size" binding:"required,min=5,max=200"`
+}
+
+type TranferFromFilter struct {
+	ID int64 `uri:"id" binding:"required,min=1"`
 }

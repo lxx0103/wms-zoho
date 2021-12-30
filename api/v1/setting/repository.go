@@ -39,6 +39,7 @@ type SettingRepository interface {
 	StockTransfer(LocationStockTransfer, string) (int64, error)
 	GetTransferCount(filter TransferFilter) (int, error)
 	GetTransferList(filter TransferFilter) ([]TransferTransaction, error)
+	GetNextTransactionLocation(TranferFromFilter) (string, error)
 
 	//Barcode Management
 	GetBarcodeByID(id int64) (Barcode, error)
@@ -243,6 +244,7 @@ func (r *settingRepository) GetLocationCount(filter LocationFilter) (int, error)
 }
 
 func (r *settingRepository) GetLocationList(filter LocationFilter) ([]Location, error) {
+	fmt.Println(filter.Level)
 	where, args := []string{"1 = 1"}, []interface{}{}
 	if v := filter.Code; v != "" {
 		where, args = append(where, "code like ?"), append(args, "%"+v+"%")
@@ -547,6 +549,93 @@ func (r *settingRepository) StockTransfer(info LocationStockTransfer, user strin
 	if err != nil {
 		return 0, err
 	}
+
+	type Transacion struct {
+		ID       int64
+		POID     int64
+		PONumber string
+		ItemName string
+		SKU      string
+		Quantity int64
+		Balance  int64
+		Created  time.Time
+	}
+	quantity := info.Quantity
+	for quantity > 0 {
+		var tran Transacion
+		var tranfered int64
+		tranfered = 0
+		row := tx.QueryRow(`SELECT id, po_id, po_number, item_name, sku, quantity, balance, created FROM i_transactions WHERE location_code = ? AND balance >0 order by created ASC, id ASC  LIMIT 1`, info.From)
+		err = row.Scan(&tran.ID, &tran.POID, &tran.PONumber, &tran.ItemName, &tran.SKU, &tran.Quantity, &tran.Balance, &tran.Created)
+		if err != nil {
+			fmt.Println(1)
+			return 0, err
+		}
+		if tran.Balance >= quantity {
+			tranfered = quantity
+			quantity = 0
+		} else {
+			tranfered = tran.Balance
+			quantity = quantity - tran.Balance
+		}
+		_, err = tx.Exec(`
+			Update i_transactions SET 
+			balance = balance - ?,
+			updated = ?,
+			updated_by = ? 
+			WHERE id = ?
+		`, tranfered, time.Now(), user, tran.ID)
+		if err != nil {
+			fmt.Println(2)
+			return 0, err
+		}
+
+		res, err := tx.Exec(`
+			INSERT INTO i_transactions
+			(
+				po_id,
+				po_number,
+				item_name,
+				sku,
+				quantity,
+				balance,
+				location_code,
+				enabled,
+				created,
+				created_by,
+				updated,
+				updated_by
+			)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`, tran.POID, tran.PONumber, tran.ItemName, tran.SKU, tranfered, tranfered, info.To, 1, tran.Created, user, time.Now(), user)
+		if err != nil {
+			fmt.Println(3)
+			return 0, err
+		}
+		inserted, err := res.LastInsertId()
+		if err != nil {
+			fmt.Println(4)
+			return 0, err
+		}
+
+		_, err = tx.Exec(`
+			UPDATE i_transactions t
+			LEFT JOIN s_locations l
+			ON t.location_code = l.code
+			LEFT JOIN s_shelves s
+			ON l.shelf_id = s.id
+			SET t.shelf_code = s.code,
+			t.shelf_location = s.location,
+			t.location_level = l.level,
+			t.updated = ?,
+			t.updated_by = ?
+			WHERE t.id = ?
+		`, time.Now(), user, inserted)
+		if err != nil {
+			fmt.Println(5)
+			return 0, err
+		}
+	}
 	tx.Commit()
 	return transactionID, nil
 }
@@ -591,4 +680,25 @@ func (r *settingRepository) GetTransferList(filter TransferFilter) ([]TransferTr
 		return nil, err
 	}
 	return transfers, nil
+}
+func (r *settingRepository) GetNextTransactionLocation(filter TranferFromFilter) (string, error) {
+
+	cur, err := r.GetLocationByID(filter.ID)
+	if err != nil {
+		return "", err
+	}
+	var res string
+	err = r.conn.Get(&res, `
+		SELECT location_code 
+		FROM i_transactions 
+		WHERE sku = ?
+		AND location_code != ?
+		AND balance > 0
+		ORDER BY created ASC, id ASC
+		LIMIT 1
+	`, cur.SKU, cur.Code)
+	if err != nil {
+		return "", err
+	}
+	return res, nil
 }

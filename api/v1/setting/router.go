@@ -20,4 +20,5 @@ func Routers(g *gin.RouterGroup) {
 
 	g.POST("/transfers", StockTransfer)
 	g.GET("/transfers", GetTransferList)
+	g.GET("/transferfrom/:id", GetNextTransactionLocation)
 }

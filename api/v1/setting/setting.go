@@ -1,6 +1,8 @@
 package setting
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"wms.com/core/response"
 	"wms.com/service"
@@ -145,6 +147,7 @@ func GetLocationList(c *gin.Context) {
 		response.ResponseError(c, "BindingError", err)
 		return
 	}
+	fmt.Println(filter)
 	settingService := NewSettingService()
 	count, list, err := settingService.GetLocationList(filter)
 	if err != nil {
@@ -408,4 +411,34 @@ func GetTransferList(c *gin.Context) {
 		return
 	}
 	response.ResponseList(c, filter.PageId, filter.PageSize, count, list)
+}
+
+// @Summary 获取最早一个批次的货位
+// @Id 29
+// @Tags 货位管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "转入货位ID"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /transferfrom/:id [GET]
+func GetNextTransactionLocation(c *gin.Context) {
+	var filter TranferFromFilter
+	err := c.ShouldBindUri(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	settingService := NewSettingService()
+	res, err := settingService.GetNextTransactionLocation(filter)
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			response.Response(c, "")
+			return
+		}
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, res)
 }
