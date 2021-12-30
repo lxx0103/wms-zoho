@@ -146,13 +146,14 @@ func GetPurchaseOrderByID(c *gin.Context) {
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /receives [POST]
 func NewReceive(c *gin.Context) {
+	//Binding
 	var receive ReceiveNew
 	if err := c.ShouldBindJSON(&receive); err != nil {
 		response.ResponseError(c, "BindingError", err)
 		return
 	}
 	claims := c.MustGet("claims").(*service.CustomClaims)
-
+	//Get Barcode information
 	settingService := setting.NewSettingService()
 	barcode, err := settingService.GetBarcodeByCode(receive.Barcode)
 	if err != nil {
@@ -170,6 +171,11 @@ func NewReceive(c *gin.Context) {
 		response.ResponseError(c, "PurchaseOrderError", err)
 		return
 	}
+	item, err := inventoryService.GetItemBySKU(barcode.SKU)
+	if err != nil {
+		response.ResponseError(c, "ItemError", err)
+		return
+	}
 	var canReceive, canStore int64
 	canReceive = 0
 	for i := 0; i < len(*items); i++ {
@@ -185,43 +191,111 @@ func NewReceive(c *gin.Context) {
 		return
 	}
 	canStore = 0
-	for j := 0; j < len(*locations); j++ {
-		canStore += (*locations)[j].Capacity - (*locations)[j].Quantity
-	}
-	if canStore < toReceive {
-		response.ResponseError(c, "LocationError", errors.New("NOT ENOUGH SPACE TO STORE THE ITEMS"))
-		return
-	}
-	item, err := inventoryService.GetItemBySKU(barcode.SKU)
-	if err != nil {
-		response.ResponseError(c, "ItemError", err)
-		return
-	}
-	rabbit, _ := queue.GetConn()
 	var res StockInRes
 	isCompleted := false
-	for k := 0; k < len(*locations); k++ {
-		shelf, err := settingService.GetShelfByID((*locations)[k].ShelfID)
-		if err != nil {
-			response.ResponseError(c, "ShelfError", err)
+	var gCapacity, elseCapacity, gQuantity, elseQuantity int64
+	var gLocations, elseLocations []setting.Location
+	gCapacity = 0
+	elseCapacity = 0
+	gQuantity = 0
+	elseQuantity = 0
+
+	for j := 0; j < len(*locations); j++ {
+		if (*locations)[j].Level == "G" {
+			gCapacity += (*locations)[j].Capacity - (*locations)[j].Quantity
+			gQuantity += (*locations)[j].Quantity
+			gLocations = append(gLocations, (*locations)[j])
+		} else {
+			elseCapacity += (*locations)[j].Capacity - (*locations)[j].Quantity
+			elseQuantity += (*locations)[j].Quantity
+			elseLocations = append(elseLocations, (*locations)[j])
+		}
+	}
+	if elseQuantity == 0 { //如果其他层没有库存, 先G后其他
+		canStore = elseCapacity + gCapacity
+		if canStore < toReceive {
+			response.ResponseError(c, "LocationError", errors.New("NOT ENOUGH SPACE TO STORE THE ITEMS"))
 			return
 		}
-		var toStore StoctInLoc
-		toStore.LocationCode = (*locations)[k].Code
-		toStore.LocationLevel = (*locations)[k].Level
-		toStore.ShelfCode = shelf.Code
-		toStore.ShelfLocation = shelf.Location
-		toStore.ItemName = item.Name
-		toStore.SKU = item.SKU
-		if (*locations)[k].Available >= toReceive {
-			toStore.Quantity = toReceive
+		for k := 0; k < len(gLocations); k++ {
+			shelf, err := settingService.GetShelfByID(gLocations[k].ShelfID)
+			if err != nil {
+				response.ResponseError(c, "ShelfError", err)
+				return
+			}
+			var toStore StoctInLoc
+			toStore.LocationCode = gLocations[k].Code
+			toStore.LocationLevel = gLocations[k].Level
+			toStore.ShelfCode = shelf.Code
+			toStore.ShelfLocation = shelf.Location
+			toStore.ItemName = item.Name
+			toStore.SKU = item.SKU
+			if gLocations[k].Available >= toReceive {
+				toStore.Quantity = toReceive
+				toReceive = 0
+				res.Location = append(res.Location, toStore)
+				break
+			}
+			toStore.Quantity = gLocations[k].Available
+			toReceive = toReceive - toStore.Quantity
 			res.Location = append(res.Location, toStore)
-			break
 		}
-		toStore.Quantity = (*locations)[k].Available
-		toReceive = toReceive - toStore.Quantity
-		res.Location = append(res.Location, toStore)
+		if toReceive > 0 {
+			for j := 0; j < len(elseLocations); j++ {
+				shelf, err := settingService.GetShelfByID(elseLocations[j].ShelfID)
+				if err != nil {
+					response.ResponseError(c, "ShelfError", err)
+					return
+				}
+				var toStore StoctInLoc
+				toStore.LocationCode = elseLocations[j].Code
+				toStore.LocationLevel = elseLocations[j].Level
+				toStore.ShelfCode = shelf.Code
+				toStore.ShelfLocation = shelf.Location
+				toStore.ItemName = item.Name
+				toStore.SKU = item.SKU
+				if elseLocations[j].Available >= toReceive {
+					toStore.Quantity = toReceive
+					toReceive = 0
+					res.Location = append(res.Location, toStore)
+					break
+				}
+				toStore.Quantity = elseLocations[j].Available
+				toReceive = toReceive - toStore.Quantity
+				res.Location = append(res.Location, toStore)
+			}
+		}
+	} else { //如果其他层有库存, 只能放其他
+		canStore = elseCapacity
+		if canStore < toReceive {
+			response.ResponseError(c, "LocationError", errors.New("NOT ENOUGH SPACE TO STORE THE ITEMS"))
+			return
+		}
+		for j := 0; j < len(elseLocations); j++ {
+			shelf, err := settingService.GetShelfByID(elseLocations[j].ShelfID)
+			if err != nil {
+				response.ResponseError(c, "ShelfError", err)
+				return
+			}
+			var toStore StoctInLoc
+			toStore.LocationCode = elseLocations[j].Code
+			toStore.LocationLevel = elseLocations[j].Level
+			toStore.ShelfCode = shelf.Code
+			toStore.ShelfLocation = shelf.Location
+			toStore.ItemName = item.Name
+			toStore.SKU = item.SKU
+			if elseLocations[j].Available >= toReceive {
+				toStore.Quantity = toReceive
+				toReceive = 0
+				res.Location = append(res.Location, toStore)
+				break
+			}
+			toStore.Quantity = elseLocations[j].Available
+			toReceive = toReceive - toStore.Quantity
+			res.Location = append(res.Location, toStore)
+		}
 	}
+	rabbit, _ := queue.GetConn()
 	for l := 0; l < len(res.Location); l++ {
 		//stock in
 		var locationUpdateInfo setting.UpdateLocationStock

@@ -21,7 +21,7 @@ type ShelfID struct {
 
 type LocationFilter struct {
 	Code     string `form:"code" binding:"omitempty,max=64,min=1"`
-	Level    int    `json:"level" binding:"omitempty,min=1,max=8"`
+	Level    string `json:"level" binding:"omitempty,min=1,max=64"`
 	ShelfID  int64  `form:"shelf_id" binding:"omitempty,min=1"`
 	SKU      string `form:"sku" binding:"omitempty,max=64,min=1"`
 	IsAlert  bool   `form:"is_alert" binding:"omitempty"`
@@ -32,7 +32,7 @@ type LocationFilter struct {
 
 type LocationNew struct {
 	Code     string `json:"code" binding:"required,min=1,max=64"`
-	Level    int    `json:"level" binding:"required,min=1,max=8"`
+	Level    string `json:"level" binding:"required,min=1,max=64"`
 	ShelfID  int64  `json:"shelf_id" binding:"required,min=1"`
 	SKU      string `json:"sku" binding:"required,min=1,max=64"`
 	Capacity int    `json:"capacity" binding:"required,min=1"`

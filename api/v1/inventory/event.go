@@ -19,7 +19,7 @@ type NewReceiveCreated struct {
 	Quantity      int64  `json:"quantity"`
 	LocationID    int64  `json:"location_id"`
 	LocationCode  string `json:"location_code"`
-	LocationLevel int64  `json:"location_level"`
+	LocationLevel string `json:"location_level"`
 	User          string `json:"user"`
 }
 

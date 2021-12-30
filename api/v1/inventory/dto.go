@@ -50,7 +50,7 @@ type StoctInLoc struct {
 	ShelfCode     string `json:"shelf_code"`
 	ShelfLocation string `json:"shelf_location"`
 	LocationCode  string `json:"location_code"`
-	LocationLevel int64  `json:"location_level"`
+	LocationLevel string `json:"location_level"`
 	Quantity      int64  `json:"quantity"`
 }
 
@@ -63,7 +63,7 @@ type TransactionNew struct {
 	ShelfCode     string `json:"shelf_code"`
 	ShelfLocation string `json:"shelf_location"`
 	LocationCode  string `json:"location_code"`
-	LocationLevel int64  `json:"location_level"`
+	LocationLevel string `json:"location_level"`
 	User          string `json:"user"`
 }
 
@@ -178,7 +178,7 @@ type PickingTransactionNew struct {
 	ShelfCode     string `db:"shelf_code" json:"shelf_code"`
 	ShelfLocation string `db:"shelf_location" json:"shelf_location"`
 	LocationCode  string `db:"location_code" json:"location_code"`
-	LocationLevel int64  `db:"location_level" json:"location_level"`
+	LocationLevel string `db:"location_level" json:"location_level"`
 	UserName      string `json:"user_name"`
 }
 

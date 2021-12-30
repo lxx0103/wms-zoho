@@ -219,7 +219,7 @@ func (r *settingRepository) GetLocationCount(filter LocationFilter) (int, error)
 	if v := filter.SKU; v != "" {
 		where, args = append(where, "sku = ?"), append(args, v)
 	}
-	if v := filter.Level; v != 0 {
+	if v := filter.Level; v != "" {
 		where, args = append(where, "level = ?"), append(args, v)
 	}
 	if v := filter.ShelfID; v != 0 {
@@ -250,7 +250,7 @@ func (r *settingRepository) GetLocationList(filter LocationFilter) ([]Location, 
 	if v := filter.SKU; v != "" {
 		where, args = append(where, "sku = ?"), append(args, v)
 	}
-	if v := filter.Level; v != 0 {
+	if v := filter.Level; v != "" {
 		where, args = append(where, "level = ?"), append(args, v)
 	}
 	if v := filter.ShelfID; v != 0 {
@@ -288,7 +288,7 @@ func (r *settingRepository) GetLocationBySKU(sku string) (*[]Location, error) {
 		WHERE `+strings.Join(where, " AND ")+`
 		AND available > 0
 		AND enabled = 1
-		ORDER BY available ASC
+		ORDER BY quantity DESC, available ASC
 	`, args...)
 	if err != nil {
 		return nil, err

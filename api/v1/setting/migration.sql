@@ -21,7 +21,7 @@ CREATE TABLE `s_shelves` (
 CREATE TABLE `s_locations` (
   `id` int NOT NULL AUTO_INCREMENT,
   `code` varchar(64) NOT NULL DEFAULT '' COMMENT '货位编码',
-  `level` smallint NOT NULL DEFAULT '0' COMMENT '所在层',
+  `level` varchar(64) NOT NULL DEFAULT '' COMMENT '所在层',
   `shelf_id` int NOT NULL DEFAULT '0' COMMENT '货架ID',
   `sku` varchar(64) NOT NULL DEFAULT '' COMMENT '商品SKU',
   `capacity` int NOT NULL COMMENT '可容纳商品',
