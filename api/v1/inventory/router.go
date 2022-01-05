@@ -21,4 +21,9 @@ func Routers(g *gin.RouterGroup) {
 	g.POST("/cancelpackings/:id", CancelPacking)
 	g.POST("/adjustments", NewAdjustment)
 	g.GET("/adjustments", GetAdjustmentList)
+
+	g.GET("/pallets", GetPalletList)
+	g.GET("/pallets/:id", GetPalletByID)
+	g.PUT("/pallets/:id", UpdatePallet)
+	g.POST("/pallets", NewPallet)
 }

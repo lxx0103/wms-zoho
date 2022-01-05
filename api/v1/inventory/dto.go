@@ -99,6 +99,23 @@ type FilterSOItem struct {
 	SOID int64  `json:"so_id"`
 	SKU  string `json:"sku"`
 }
+
+type FilterSOPallet struct {
+	SOID     int64 `json:"so_id"`
+	PageId   int   `form:"page_id" binding:"required,min=1"`
+	PageSize int   `form:"page_size" binding:"required,min=5,max=200"`
+}
+
+type SOPalletID struct {
+	ID int64 `uri:"id" binding:"required,min=1"`
+}
+type PalletNew struct {
+	SOID     int64  `json:"so_id" binding:"required,min=1"`
+	Name     string `json:"name" binding:"required,min=1"`
+	Status   int    `json:"status" binding:"required,oneof=1 2"`
+	UserName string `json:"user_name" swaggerignore:"true"`
+}
+
 type SOItemUpdate struct {
 	SOID     int64  `json:"so_id"`
 	Quantity int64  `json:"quantity"`

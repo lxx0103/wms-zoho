@@ -835,3 +835,123 @@ func GetAdjustmentList(c *gin.Context) {
 	}
 	response.ResponseList(c, filter.PageId, filter.PageSize, count, list)
 }
+
+// @Summary Pallet列表
+// @Id 57
+// @Tags Pallet管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param code query string false "Pallet编码"
+// @Param level query string false "Pallet层"
+// @Param so_id query string false "销售订单id"
+// @Success 200 object response.ListRes{data=[]Pallet} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pallets [GET]
+func GetPalletList(c *gin.Context) {
+	var filter FilterSOPallet
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	inventoryService := NewInventoryService()
+	count, list, err := inventoryService.GetPalletList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageId, filter.PageSize, count, list)
+}
+
+// @Summary 新建Pallet
+// @Id 58
+// @Tags Pallet管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param pallet_info body PalletNew true "Pallet信息"
+// @Success 200 object response.SuccessRes{data=Pallet} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pallets [POST]
+func NewPallet(c *gin.Context) {
+	var pallet PalletNew
+	if err := c.ShouldBindJSON(&pallet); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	pallet.UserName = claims.Username
+	inventoryService := NewInventoryService()
+	new, err := inventoryService.NewPallet(pallet)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 根据ID获取Pallet
+// @Id 59
+// @Tags Pallet管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "PalletID"
+// @Success 200 object response.SuccessRes{data=SalesOrderPallet} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pallets/:id [GET]
+func GetPalletByID(c *gin.Context) {
+	var uri SOPalletID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	inventoryService := NewInventoryService()
+	pallet, err := inventoryService.GetPalletByID(uri.ID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, pallet)
+
+}
+
+// @Summary 根据ID更新Pallet
+// @Id 60
+// @Tags Pallet管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "PalletID"
+// @Param pallet_info body PalletNew true "Pallet信息"
+// @Success 200 object response.SuccessRes{data=Pallet} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pallets/:id [PUT]
+func UpdatePallet(c *gin.Context) {
+	var uri SOPalletID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	var pallet PalletNew
+	if err := c.ShouldBindJSON(&pallet); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	pallet.UserName = claims.Username
+	inventoryService := NewInventoryService()
+	new, err := inventoryService.UpdatePallet(uri.ID, pallet)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}

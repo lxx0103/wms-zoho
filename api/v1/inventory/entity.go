@@ -81,6 +81,7 @@ type SalesOrder struct {
 	CustomerName string    `db:"customer_name" json:"customer_name"`
 	SalesName    string    `db:"sales_name" json:"sales_name"`
 	Enabled      string    `db:"enabled" json:"enabled"`
+	HasPallet    bool      `db:"has_pallet" json:"has_pallet"`
 	Created      time.Time `db:"created" json:"created"`
 	CreatedBy    string    `db:"created_by" json:"created_by"`
 	Updated      time.Time `db:"updated" json:"updated"`
@@ -105,6 +106,16 @@ type SalesOrderItem struct {
 	UpdatedBy       string    `db:"updated_by" json:"updated_by"`
 }
 
+type SalesOrderPallet struct {
+	ID        int64     `db:"id" json:"id"`
+	SOID      int64     `db:"so_id" json:"so_id"`
+	Name      string    `db:"name" json:"name"`
+	Status    int       `db:"status" json:"status"`
+	Created   time.Time `db:"created" json:"created"`
+	CreatedBy string    `db:"created_by" json:"created_by"`
+	Updated   time.Time `db:"updated" json:"updated"`
+	UpdatedBy string    `db:"updated_by" json:"updated_by"`
+}
 type PickingOrder struct {
 	ID          int64     `db:"id" json:"id"`
 	Name        string    `db:"name" json:"name"`

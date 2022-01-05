@@ -1,6 +1,7 @@
 package inventory
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -62,6 +63,12 @@ type InventoryRepository interface {
 	CreateAdjustment(AdjustmentInfo) (int64, error)
 	GetAdjustmentCount(AdjustmentFilter) (int, error)
 	GetAdjustmentList(AdjustmentFilter) ([]Adjustment, error)
+	//Pallet
+	GetPalletByID(id int64) (*SalesOrderPallet, error)
+	CreatePallet(info PalletNew) (int64, error)
+	GetPalletCount(filter FilterSOPallet) (int, error)
+	GetPalletList(filter FilterSOPallet) (*[]SalesOrderPallet, error)
+	UpdatePallet(id int64, info PalletNew) (int64, error)
 }
 
 func (r *inventoryRepository) GetItemByID(id int64) (Item, error) {
@@ -1486,4 +1493,137 @@ func (r *inventoryRepository) GetAdjustmentList(filter AdjustmentFilter) ([]Adju
 		return nil, err
 	}
 	return adjustments, nil
+}
+
+func (r *inventoryRepository) GetPalletByID(id int64) (*SalesOrderPallet, error) {
+	var pallet SalesOrderPallet
+	err := r.conn.Get(&pallet, "SELECT * FROM i_sales_order_pallets WHERE id = ? ", id)
+	if err != nil {
+		return nil, err
+	}
+	return &pallet, nil
+}
+
+func (r *inventoryRepository) CreatePallet(info PalletNew) (int64, error) {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	result, err := tx.Exec(`
+		INSERT INTO i_sales_order_pallets
+		(
+			so_id,
+			name,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, info.SOID, info.Name, info.Status, time.Now(), info.UserName, time.Now(), info.UserName)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	err = r.CheckSOPalletStatus(tx, info.SOID)
+	if err != nil {
+		return 0, err
+	}
+	tx.Commit()
+	return id, nil
+}
+
+func (r *inventoryRepository) GetPalletCount(filter FilterSOPallet) (int, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.SOID; v != 0 {
+		where, args = append(where, "so_id = ?"), append(args, v)
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count 
+		FROM i_sales_order_pallets 
+		WHERE `+strings.Join(where, " AND "), args...)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *inventoryRepository) GetPalletList(filter FilterSOPallet) (*[]SalesOrderPallet, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.SOID; v != 0 {
+		where, args = append(where, "so_id = ?"), append(args, v)
+	}
+	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var locations []SalesOrderPallet
+	err := r.conn.Select(&locations, `
+		SELECT * 
+		FROM i_sales_order_pallets 
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	if err != nil {
+		return nil, err
+	}
+	return &locations, nil
+}
+
+func (r *inventoryRepository) UpdatePallet(id int64, info PalletNew) (int64, error) {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	result, err := tx.Exec(`
+		Update i_sales_order_pallets SET 
+		name = ?,
+		status = ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE id = ?
+	`, info.Name, info.Status, time.Now(), info.UserName, id)
+	if err != nil {
+		return 0, err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	err = r.CheckSOPalletStatus(tx, info.SOID)
+	if err != nil {
+		return 0, err
+	}
+	tx.Commit()
+	return affected, nil
+}
+
+func (r *inventoryRepository) CheckSOPalletStatus(tx *sql.Tx, soID int64) error {
+
+	var hasPallet int64
+	var status int
+	row := tx.QueryRow(`SELECT count(1) as pallet_counts FROM i_sales_order_pallets WHERE so_id = ? AND status = 1`, soID)
+	err := row.Scan(&hasPallet)
+	if err != nil {
+		return err
+	}
+	if hasPallet == 0 {
+		status = 0
+	} else {
+		status = 1
+	}
+	_, err = tx.Exec(`
+		Update i_sales_orders SET 
+		has_pallet = ?
+		WHERE id = ?
+	`, status, soID)
+	if err != nil {
+		return err
+	}
+	return nil
 }

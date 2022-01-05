@@ -43,6 +43,11 @@ type InventoryService interface {
 	//Adjustment
 	CreateAdjustment(AdjustmentInfo) (int64, error)
 	GetAdjustmentList(AdjustmentFilter) (int, []Adjustment, error)
+	//Pallet
+	GetPalletByID(int64) (*SalesOrderPallet, error)
+	NewPallet(PalletNew) (*SalesOrderPallet, error)
+	GetPalletList(FilterSOPallet) (int, *[]SalesOrderPallet, error)
+	UpdatePallet(int64, PalletNew) (*SalesOrderPallet, error)
 }
 
 func (s *inventoryService) GetItemByID(id int64) (Item, error) {
@@ -254,4 +259,47 @@ func (s *inventoryService) GetAdjustmentList(filter AdjustmentFilter) (int, []Ad
 		return 0, nil, err
 	}
 	return count, list, err
+}
+
+func (s *inventoryService) GetPalletByID(id int64) (*SalesOrderPallet, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	pallet, err := repo.GetPalletByID(id)
+	return pallet, err
+}
+
+func (s *inventoryService) NewPallet(info PalletNew) (*SalesOrderPallet, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	palletID, err := repo.CreatePallet(info)
+	if err != nil {
+		return nil, err
+	}
+	pallet, err := repo.GetPalletByID(palletID)
+	return pallet, err
+}
+
+func (s *inventoryService) GetPalletList(filter FilterSOPallet) (int, *[]SalesOrderPallet, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	count, err := repo.GetPalletCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := repo.GetPalletList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *inventoryService) UpdatePallet(palletID int64, info PalletNew) (*SalesOrderPallet, error) {
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	_, err := repo.UpdatePallet(palletID, info)
+	if err != nil {
+		return nil, err
+	}
+	pallet, err := repo.GetPalletByID(palletID)
+	return pallet, err
 }

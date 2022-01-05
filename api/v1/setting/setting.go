@@ -414,7 +414,7 @@ func GetTransferList(c *gin.Context) {
 }
 
 // @Summary 获取最早一个批次的货位
-// @Id 29
+// @Id 56
 // @Tags 货位管理
 // @version 1.0
 // @Accept application/json
