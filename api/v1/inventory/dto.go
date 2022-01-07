@@ -101,7 +101,7 @@ type FilterSOItem struct {
 }
 
 type FilterSOPallet struct {
-	SOID     int64 `json:"so_id"`
+	SOID     int64 `form:"so_id"`
 	PageId   int   `form:"page_id" binding:"required,min=1"`
 	PageSize int   `form:"page_size" binding:"required,min=5,max=200"`
 }
