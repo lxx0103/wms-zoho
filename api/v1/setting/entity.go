@@ -37,6 +37,7 @@ type Barcode struct {
 	ID        int64     `db:"id" json:"id"`
 	Code      string    `db:"code" json:"code"`
 	SKU       string    `db:"sku" json:"sku"`
+	ItemName  string    `db:"item_name" json:"item_name"`
 	Unit      string    `db:"unit" json:"unit"`
 	Quantity  int64     `db:"quantity" json:"quantity"`
 	Enabled   string    `db:"enabled" json:"enabled"`

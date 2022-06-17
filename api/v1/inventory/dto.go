@@ -90,6 +90,7 @@ type SalesOrderFilter struct {
 	CustomerName string `form:"customer_name" binding:"omitempty,max=64,min=1"`
 	SalesName    string `form:"sales_name" binding:"omitempty,max=64,min=1"`
 	OrderDate    string `form:"order_date" binding:"omitempty,datetime=2006-01-02"`
+	ExpectedDate string `form:"expected_shipment_date" binding:"omitempty,datetime=2006-01-02"`
 	Status       string `form:"status" binding:"omitempty,oneof=confirmed picked packed picking invoiced draft fulfilled void partially_shipped shipped "`
 	PageId       int    `form:"page_id" binding:"required,min=1"`
 	PageSize     int    `form:"page_size" binding:"required,min=5,max=200"`

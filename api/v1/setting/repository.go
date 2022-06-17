@@ -419,17 +419,19 @@ func (r *settingRepository) GetBarcodeCount(filter BarcodeFilter) (int, error) {
 func (r *settingRepository) GetBarcodeList(filter BarcodeFilter) ([]Barcode, error) {
 	where, args := []string{"1 = 1"}, []interface{}{}
 	if v := filter.Code; v != "" {
-		where, args = append(where, "code = ?"), append(args, v)
+		where, args = append(where, "b.code = ?"), append(args, v)
 	}
 	if v := filter.SKU; v != "" {
-		where, args = append(where, "sku = ?"), append(args, v)
+		where, args = append(where, "b.sku = ?"), append(args, v)
 	}
 	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
 	args = append(args, filter.PageSize)
 	var barcodes []Barcode
 	err := r.conn.Select(&barcodes, `
-		SELECT * 
-		FROM s_barcodes 
+		SELECT b.*, i.name as item_name  
+		FROM s_barcodes b
+		LEFT JOIN i_items i
+		ON b.sku = i.sku
 		WHERE `+strings.Join(where, " AND ")+`
 		LIMIT ?, ?
 	`, args...)

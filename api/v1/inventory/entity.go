@@ -82,6 +82,7 @@ type SalesOrder struct {
 	SalesName    string    `db:"sales_name" json:"sales_name"`
 	Enabled      string    `db:"enabled" json:"enabled"`
 	HasPallet    bool      `db:"has_pallet" json:"has_pallet"`
+	ExpectedDate time.Time `db:"expected_shipment_date" json:"expected_shipment_date"`
 	Created      time.Time `db:"created" json:"created"`
 	CreatedBy    string    `db:"created_by" json:"created_by"`
 	Updated      time.Time `db:"updated" json:"updated"`

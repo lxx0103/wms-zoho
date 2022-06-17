@@ -385,6 +385,9 @@ func (r *inventoryRepository) GetSalesOrderCount(filter SalesOrderFilter) (int, 
 	if v := filter.OrderDate; v != "" {
 		where, args = append(where, "so_date = ?"), append(args, v)
 	}
+	if v := filter.ExpectedDate; v != "" {
+		where, args = append(where, "expected_shipment_date = ?"), append(args, v)
+	}
 	if v := filter.Status; v != "" {
 		where, args = append(where, "status = ?"), append(args, v)
 	}
@@ -412,6 +415,9 @@ func (r *inventoryRepository) GetSalesOrderList(filter SalesOrderFilter) ([]Sale
 	}
 	if v := filter.OrderDate; v != "" {
 		where, args = append(where, "so_date = ?"), append(args, v)
+	}
+	if v := filter.ExpectedDate; v != "" {
+		where, args = append(where, "expected_shipment_date = ?"), append(args, v)
 	}
 	if v := filter.Status; v != "" {
 		where, args = append(where, "status = ?"), append(args, v)
