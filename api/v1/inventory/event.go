@@ -37,6 +37,8 @@ func Subscribe(conn *queue.Conn) {
 	conn.StartConsumer("NewReceiveCreated", "NewReceiveCreated", AddTransaction)
 	conn.StartConsumer("NewPickingOrderCreated", "NewPickingOrderCreated", AddPicking)
 	conn.StartConsumer("PickingOrderPicked", "PickingOrderPicked", UpdateSOPicked)
+	conn.StartConsumer("SalesOrderUpdated", "SalesOrderUpdated", UpdateSalesOrder)
+	conn.StartConsumer("PurchaseOrderUpdated", "PurchaseOrderUpdated", UpdatePurchaseOrder)
 }
 
 func AddTransaction(d amqp.Delivery) bool {
@@ -182,6 +184,84 @@ func UpdateSOPicked(d amqp.Delivery) bool {
 		fmt.Println("333")
 		fmt.Println(err)
 		return false
+	}
+	return true
+}
+
+func UpdateSalesOrder(d amqp.Delivery) bool {
+	if d.Body == nil {
+		return false
+	}
+	var salesorderUpdate SalesorderUpdate
+	err := json.Unmarshal(d.Body, &salesorderUpdate)
+	if err != nil {
+		fmt.Println("1")
+		fmt.Println(err)
+		return false
+	}
+	fmt.Println(salesorderUpdate.SalesorderID, "---===---")
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	so, err := repo.GetSalesOrderByZohoID(salesorderUpdate.SalesorderID)
+	fmt.Println("---", so, "---")
+	if err == nil {
+		err = repo.UpdateSalesorder(salesorderUpdate)
+		if err != nil {
+			fmt.Println("22")
+			fmt.Println(err)
+			return false
+		}
+		err = repo.UpdateSalesorderItem(so.ID, salesorderUpdate.Items)
+		if err != nil {
+			fmt.Println("333")
+			fmt.Println(err)
+			return false
+		}
+	} else {
+		err := repo.NewSalesorder(salesorderUpdate)
+		if err != nil {
+			fmt.Println("22")
+			fmt.Println(err)
+			return false
+		}
+	}
+	return true
+}
+
+func UpdatePurchaseOrder(d amqp.Delivery) bool {
+	if d.Body == nil {
+		return false
+	}
+	var purchaseUpdate PurchaseorderUpdate
+	err := json.Unmarshal(d.Body, &purchaseUpdate)
+	if err != nil {
+		fmt.Println("1")
+		fmt.Println(err)
+		return false
+	}
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	so, err := repo.GetSalesOrderByZohoID(purchaseUpdate.PurchaseorderID)
+	if err == nil {
+		err = repo.UpdatePurchaseorder(purchaseUpdate)
+		if err != nil {
+			fmt.Println("22")
+			fmt.Println(err)
+			return false
+		}
+		err = repo.UpdatePurchaseorderItem(so.ID, purchaseUpdate.Items)
+		if err != nil {
+			fmt.Println("333")
+			fmt.Println(err)
+			return false
+		}
+	} else {
+		err := repo.NewPurchaseorder(purchaseUpdate)
+		if err != nil {
+			fmt.Println("22")
+			fmt.Println(err)
+			return false
+		}
 	}
 	return true
 }

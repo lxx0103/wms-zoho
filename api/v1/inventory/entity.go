@@ -50,6 +50,7 @@ type PurchaseOrderItem struct {
 	CreatedBy        string    `db:"created_by" json:"created_by"`
 	Updated          time.Time `db:"updated" json:"updated"`
 	UpdatedBy        string    `db:"updated_by" json:"updated_by"`
+	LineItemID       string    `db:"line_item_id" json:"line_item_id"`
 }
 
 type Transaction struct {

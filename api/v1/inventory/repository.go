@@ -69,6 +69,14 @@ type InventoryRepository interface {
 	GetPalletCount(filter FilterSOPallet) (int, error)
 	GetPalletList(filter FilterSOPallet) (*[]SalesOrderPallet, error)
 	UpdatePallet(id int64, info PalletNew) (int64, error)
+	//Event
+	GetSalesOrderByZohoID(id string) (*SalesOrder, error)
+	UpdateSalesorder(SalesorderUpdate) error
+	UpdateSalesorderItem(int64, []SalesorderItemUpdate) error
+	NewSalesorder(SalesorderUpdate) error
+	UpdatePurchaseorder(PurchaseorderUpdate) error
+	UpdatePurchaseorderItem(int64, []PurchaseorderItemUpdate) error
+	NewPurchaseorder(PurchaseorderUpdate) error
 }
 
 func (r *inventoryRepository) GetItemByID(id int64) (Item, error) {
@@ -1631,5 +1639,240 @@ func (r *inventoryRepository) CheckSOPalletStatus(tx *sql.Tx, soID int64) error 
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (r *inventoryRepository) GetSalesOrderByZohoID(id string) (*SalesOrder, error) {
+	var salesOrder SalesOrder
+	err := r.conn.Get(&salesOrder, "SELECT * FROM i_sales_orders WHERE zoho_so_id = ? ", id)
+	if err != nil {
+		return nil, err
+	}
+	return &salesOrder, nil
+}
+
+func (r *inventoryRepository) UpdateSalesorder(info SalesorderUpdate) error {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	_, err = tx.Exec(`
+		Update i_sales_orders SET 
+		so_date = ?,
+		customer_id = ?,
+		customer_name = ?,
+		status = ?,
+		sales_name = ?,
+		expected_shipment_date = ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE zoho_so_id = ?
+	`, info.Date, info.CustomerID, info.CustomerName, info.Status, info.SalespersonName, info.ExpectedShipmentDate, time.Now(), "SYSTEM", info.SalesorderID)
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return nil
+}
+
+func (r *inventoryRepository) UpdateSalesorderItem(so_id int64, items []SalesorderItemUpdate) error {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for _, v := range items {
+		_, err = tx.Exec(`
+			Update i_sales_order_items SET 
+			quantity = ?,
+			updated = ?,
+			updated_by = ? 
+			WHERE so_id = ?
+			AND zoho_item_id = ?
+		`, v.Quantity, time.Now(), "SYSTEM", so_id, v.ItemID)
+		if err != nil {
+			return err
+		}
+	}
+	tx.Commit()
+	return nil
+}
+
+func (r *inventoryRepository) NewSalesorder(info SalesorderUpdate) error {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	fmt.Println(info.Date, "-----")
+	result, err := tx.Exec(`
+		INSERT INTO i_sales_orders
+		(
+			zoho_so_id,
+			so_number,
+			so_date,
+			customer_id,
+			customer_name,
+			status,
+			sales_name,
+			enabled,
+			expected_shipment_date,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.SalesorderID, info.SalesorderNumber, info.Date, info.CustomerID, info.CustomerName, info.Status, info.SalespersonName, 1, info.ExpectedShipmentDate, time.Now(), "SYSTEM", time.Now(), "SYSTEM")
+	if err != nil {
+		return err
+	}
+	so_id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	for _, v := range info.Items {
+		var item Item
+		err := r.conn.Get(&item, "SELECT * FROM i_items WHERE zoho_item_id = ? ", v.ItemID)
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec(`
+		INSERT INTO i_sales_order_items
+		(
+			so_id,
+			item_id,
+			sku,
+			zoho_item_id,
+			name,
+			quantity,
+			quantity_picked,
+			quantity_packed,
+			quantity_shipped,
+			enabled,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`, so_id, item.ID, item.SKU, item.ZohoItemID, item.Name, v.Quantity, v.QuantityPacked, v.QuantityPacked, v.QuantityShipped, 1, time.Now(), "SYSTEM", time.Now(), "SYSTEM")
+		if err != nil {
+			return err
+		}
+	}
+	tx.Commit()
+	return nil
+}
+
+func (r *inventoryRepository) UpdatePurchaseorder(info PurchaseorderUpdate) error {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	_, err = tx.Exec(`
+		Update i_purchase_orders SET 
+		po_date = ?,
+		vendor_id = ?,
+		vendor_name = ?,
+		status = ?,
+		expected_delivery_date = ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE zoho_so_id = ?
+	`, info.Date, info.VendorID, info.VendorName, info.Status, info.ExpectedDeliveryDate, time.Now(), "SYSTEM", info.PurchaseorderID)
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return nil
+}
+
+func (r *inventoryRepository) UpdatePurchaseorderItem(po_id int64, items []PurchaseorderItemUpdate) error {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for _, v := range items {
+		_, err = tx.Exec(`
+			Update i_sales_order_items SET 
+			quantity = ?,
+			updated = ?,
+			updated_by = ? 
+			WHERE po_id = ?
+			AND zoho_item_id = ?
+		`, v.Quantity, time.Now(), "SYSTEM", po_id, v.ItemID)
+		if err != nil {
+			return err
+		}
+	}
+	tx.Commit()
+	return nil
+}
+
+func (r *inventoryRepository) NewPurchaseorder(info PurchaseorderUpdate) error {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	fmt.Println(info.Date, "-----")
+	result, err := tx.Exec(`
+		INSERT INTO i_purchase_orders
+		(
+			zoho_po_id,
+			po_number,
+			po_date,
+			vendor_id,
+			vendor_name,
+			status,
+			enabled,
+			expected_delivery_date,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.PurchaseorderID, info.PurchaseorderNumber, info.Date, info.VendorID, info.VendorName, info.Status, 1, info.ExpectedDeliveryDate, time.Now(), "SYSTEM", time.Now(), "SYSTEM")
+	if err != nil {
+		return err
+	}
+	po_id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	for _, v := range info.Items {
+		var item Item
+		err := r.conn.Get(&item, "SELECT * FROM i_items WHERE zoho_item_id = ? ", v.ItemID)
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec(`
+		INSERT INTO i_purchase_order_items
+		(
+			po_id,
+			item_id,
+			sku,
+			zoho_item_id,
+			name,
+			quantity,
+			quantity_received,
+			enabled,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`, po_id, item.ID, item.SKU, item.ZohoItemID, item.Name, v.Quantity, v.QuantityReceived, 1, time.Now(), "SYSTEM", time.Now(), "SYSTEM")
+		if err != nil {
+			return err
+		}
+	}
+	tx.Commit()
 	return nil
 }

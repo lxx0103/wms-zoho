@@ -234,3 +234,72 @@ type AdjustmentFilter struct {
 	PageId       int    `form:"page_id" binding:"required,min=1"`
 	PageSize     int    `form:"page_size" binding:"required,min=5,max=200"`
 }
+
+type SalesorderUpdate struct {
+	SalesorderID         string                 `json:"salesorder_id"`
+	SalesorderNumber     string                 `json:"salesorder_number"`
+	Date                 string                 `json:"date"`
+	ExpectedShipmentDate string                 `json:"shipment_date"`
+	CustomerID           string                 `json:"customer_id"`
+	CustomerName         string                 `json:"customer_name"`
+	OrderStatus          string                 `json:"order_status"`
+	InvoicedStatus       string                 `json:"invoiced_status"`
+	PaidStatus           string                 `json:"paid_status"`
+	ShippedStatus        string                 `json:"shipped_status"`
+	Status               string                 `json:"status"`
+	Source               string                 `json:"source"`
+	SalespersonID        string                 `json:"salesperson_id"`
+	SalespersonName      string                 `json:"salesperson_name"`
+	ShippingCharge       float64                `json:"shipping_charge"`
+	SubTotal             float64                `json:"sub_total"`
+	DiscountTotal        float64                `json:"discount_total"`
+	TaxTotal             float64                `json:"tax_total"`
+	Total                float64                `json:"total"`
+	LastModifiedTime     string                 `json:"last_modified_time"`
+	Items                []SalesorderItemUpdate `json:"line_items"`
+}
+
+type SalesorderItemUpdate struct {
+	SalesorderItemID string  `json:"line_item_id"`
+	ItemID           string  `json:"item_id"`
+	SKU              string  `json:"sku"`
+	ItemName         string  `json:"name"`
+	Rate             float64 `json:"rate"`
+	Quantity         float64 `json:"quantity"`
+	DiscountTotal    float64 `json:"discount"`
+	ItemTotal        float64 `json:"item_total"`
+	QuantityPacked   float64 `json:"quantity_packed"`
+	QuantityShipped  float64 `json:"quantity_shipped"`
+}
+
+type PurchaseorderUpdate struct {
+	PurchaseorderID      string                    `json:"purchaseorder_id"`
+	PurchaseorderNumber  string                    `json:"purchaseorder_number"`
+	Date                 string                    `json:"date"`
+	ExpectedDeliveryDate string                    `json:"delivery_date"`
+	VendorID             string                    `json:"vendor_id"`
+	VendorName           string                    `json:"vendor_name"`
+	OrderStatus          string                    `json:"order_status"`
+	ReceivedStatus       string                    `json:"received_status"`
+	BilledStatus         string                    `json:"billed_status"`
+	Status               string                    `json:"status"`
+	SubTotal             float64                   `json:"sub_total"`
+	TaxTotal             float64                   `json:"tax_total"`
+	Total                float64                   `json:"total"`
+	LastModifiedTime     string                    `json:"last_modified_time"`
+	Items                []PurchaseorderItemUpdate `json:"line_items"`
+}
+
+type PurchaseorderItemUpdate struct {
+	PurchaseorderItemID string  `json:"line_item_id"`
+	ItemID              string  `json:"item_id"`
+	SKU                 string  `json:"sku"`
+	ItemName            string  `json:"name"`
+	Rate                float64 `json:"rate"`
+	Quantity            float64 `json:"quantity"`
+	DiscountTotal       float64 `json:"discount"`
+	ItemTotal           float64 `json:"item_total"`
+	QuantityReceived    float64 `json:"quantity_received"`
+	QuantityCancelled   float64 `json:"quantity_cancelled"`
+	Quantitybilled      float64 `json:"quantity_billed"`
+}
