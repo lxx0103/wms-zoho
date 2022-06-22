@@ -265,3 +265,15 @@ func UpdatePurchaseOrder(d amqp.Delivery) bool {
 	}
 	return true
 }
+
+type NewReceiveToZoho struct {
+	POID     string `json:"po_id"`
+	SKU      string `json:"sku"`
+	Quantity int64  `json:"quantity"`
+}
+
+type NewPackedToZoho struct {
+	SOID     string `json:"so_id"`
+	SKU      string `json:"sku"`
+	Quantity int64  `json:"quantity"`
+}

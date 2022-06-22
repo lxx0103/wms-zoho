@@ -161,7 +161,13 @@ func NewReceive(c *gin.Context) {
 		return
 	}
 	toReceive := barcode.Quantity * receive.Quantity
+	toZoho := toReceive
 	inventoryService := NewInventoryService()
+	POInfo, err := inventoryService.GetPurchaseOrderByID(receive.POID)
+	if err != nil {
+		response.ResponseError(c, "PurchaseOrderError", err)
+		return
+	}
 	filter := FilterPOItem{
 		POID: receive.POID,
 		SKU:  barcode.SKU,
@@ -336,6 +342,16 @@ func NewReceive(c *gin.Context) {
 		}
 	}
 	res.IsCompleted = isCompleted
+	var eventToZoho NewReceiveToZoho
+	eventToZoho.POID = POInfo.ZohoPOID
+	eventToZoho.SKU = item.SKU
+	eventToZoho.Quantity = toZoho
+	msg, _ := json.Marshal(eventToZoho)
+	err = rabbit.Publish("NewReceiveToZoho", msg)
+	if err != nil {
+		response.ResponseError(c, "SyncToZohoError", err)
+		return
+	}
 	response.Response(c, res)
 }
 
@@ -697,6 +713,22 @@ func NewPacking(c *gin.Context) {
 	transactionID, err := inventoryService.CreatePackingTransaction(newTransaction)
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	soInfo, err := inventoryService.GetSalesOrderByID(info.SOID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	rabbit, _ := queue.GetConn()
+	var eventToZoho NewPackedToZoho
+	eventToZoho.SOID = soInfo.ZohoSOID
+	eventToZoho.SKU = item.SKU
+	eventToZoho.Quantity = info.Quantity
+	msg, _ := json.Marshal(eventToZoho)
+	err = rabbit.Publish("NewPackedToZoho", msg)
+	if err != nil {
+		response.ResponseError(c, "SyncToZohoError", err)
 		return
 	}
 	response.Response(c, transactionID)
