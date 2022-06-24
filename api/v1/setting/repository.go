@@ -48,6 +48,8 @@ type SettingRepository interface {
 	GetBarcodeList(filter BarcodeFilter) ([]Barcode, error)
 	UpdateBarcode(id int64, info BarcodeNew) (int64, error)
 	GetBarcodeByCode(string) (*Barcode, error)
+	GetItemNameBySKU(sku string) (string, error)
+	CreateTransaction(t TransactionNew) error
 }
 
 func (r *settingRepository) GetShelfByID(id int64) (Shelf, error) {
@@ -703,4 +705,47 @@ func (r *settingRepository) GetNextTransactionLocation(filter TranferFromFilter)
 		return "", err
 	}
 	return res, nil
+}
+
+func (r *settingRepository) GetItemNameBySKU(sku string) (string, error) {
+	var name string
+	err := r.conn.Get(&name, "SELECT name FROM i_items WHERE sku = ? ", sku)
+	if err != nil {
+		return "", err
+	}
+	return name, nil
+}
+
+func (r *settingRepository) CreateTransaction(t TransactionNew) error {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	_, err = tx.Exec(`
+		INSERT INTO i_transactions
+		(
+			po_id,
+			po_number,
+			item_name,
+			sku,
+			quantity,
+			balance,
+			shelf_code,
+			shelf_location,
+			location_code,
+			location_level,
+			enabled,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, t.POID, t.PONumber, t.ItemName, t.SKU, t.Quantity, t.Quantity, t.ShelfCode, t.ShelfLocation, t.LocationCode, t.LocationLevel, 1, time.Now(), t.User, time.Now(), t.User)
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return nil
 }

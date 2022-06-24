@@ -1,9 +1,11 @@
 package setting
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"wms.com/core/queue"
 	"wms.com/core/response"
 	"wms.com/service"
 )
@@ -180,6 +182,20 @@ func NewLocation(c *gin.Context) {
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
 		return
+	}
+	if location.Quantity > 0 {
+		rabbit, _ := queue.GetConn()
+		var newEvent NewLocationCreated
+		newEvent.LocationCode = location.Code
+		newEvent.Quantity = location.Quantity
+		newEvent.SKU = location.SKU
+		msg, _ := json.Marshal(newEvent)
+		err = rabbit.Publish("NewLocationCreated", msg)
+		if err != nil {
+			response.ResponseError(c, "PublishError", err)
+			return
+		}
+
 	}
 	response.Response(c, new)
 }

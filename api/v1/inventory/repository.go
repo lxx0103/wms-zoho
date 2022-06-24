@@ -74,9 +74,13 @@ type InventoryRepository interface {
 	UpdateSalesorder(SalesorderUpdate) error
 	UpdateSalesorderItem(int64, []SalesorderItemUpdate) error
 	NewSalesorder(SalesorderUpdate) error
+	GetPurchaseOrderByZohoID(id string) (*PurchaseOrder, error)
 	UpdatePurchaseorder(PurchaseorderUpdate) error
 	UpdatePurchaseorderItem(int64, []PurchaseorderItemUpdate) error
 	NewPurchaseorder(PurchaseorderUpdate) error
+	GetItemByZohoID(id string) (*Item, error)
+	UpdateItem(ItemUpdate) error
+	NewItem(ItemUpdate) error
 }
 
 func (r *inventoryRepository) GetItemByID(id int64) (Item, error) {
@@ -1781,7 +1785,7 @@ func (r *inventoryRepository) UpdatePurchaseorder(info PurchaseorderUpdate) erro
 		expected_delivery_date = ?,
 		updated = ?,
 		updated_by = ? 
-		WHERE zoho_so_id = ?
+		WHERE zoho_po_id = ?
 	`, info.Date, info.VendorID, info.VendorName, info.Status, info.ExpectedDeliveryDate, time.Now(), "SYSTEM", info.PurchaseorderID)
 	if err != nil {
 		return err
@@ -1798,7 +1802,7 @@ func (r *inventoryRepository) UpdatePurchaseorderItem(po_id int64, items []Purch
 	defer tx.Rollback()
 	for _, v := range items {
 		_, err = tx.Exec(`
-			Update i_sales_order_items SET 
+			Update i_purchase_order_items SET 
 			quantity = ?,
 			updated = ?,
 			updated_by = ? 
@@ -1872,6 +1876,76 @@ func (r *inventoryRepository) NewPurchaseorder(info PurchaseorderUpdate) error {
 		if err != nil {
 			return err
 		}
+	}
+	tx.Commit()
+	return nil
+}
+
+func (r *inventoryRepository) GetPurchaseOrderByZohoID(id string) (*PurchaseOrder, error) {
+	var purchaseOrder PurchaseOrder
+	err := r.conn.Get(&purchaseOrder, "SELECT * FROM i_purchase_orders WHERE zoho_po_id = ? ", id)
+	if err != nil {
+		return nil, err
+	}
+	return &purchaseOrder, nil
+}
+
+func (r *inventoryRepository) GetItemByZohoID(id string) (*Item, error) {
+	var item Item
+	err := r.conn.Get(&item, "SELECT * FROM i_items WHERE zoho_item_id = ? ", id)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *inventoryRepository) UpdateItem(info ItemUpdate) error {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	_, err = tx.Exec(`
+		Update i_items SET 
+		name = ?,
+		unit = ?,
+		updated = ?,
+		updated_by = ? 
+		WHERE zoho_item_id = ?
+	`, info.Name, info.Unit, time.Now(), "SYSTEM", info.ItemID)
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return nil
+}
+
+func (r *inventoryRepository) NewItem(info ItemUpdate) error {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	_, err = tx.Exec(`
+		INSERT INTO i_items
+		(
+			zoho_item_id,
+			sku,
+			name,
+			unit,
+			stock,
+			stock_available,
+			stock_packing,
+			enabled,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.ItemID, info.Sku, info.Name, info.Unit, info.StockOnHand, info.ActualAvailableStock, 0, 1, time.Now(), "SYSTEM", time.Now(), "SYSTEM")
+	if err != nil {
+		return err
 	}
 	tx.Commit()
 	return nil

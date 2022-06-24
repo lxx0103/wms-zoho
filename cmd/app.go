@@ -18,7 +18,7 @@ func Run() {
 	log.ConfigLogger()
 	cache.ConfigCache()
 	database.ConfigMysql()
-	event.Subscribe(user.Subscribe, auth.Subscribe, inventory.Subscribe)
+	event.Subscribe(user.Subscribe, auth.Subscribe, inventory.Subscribe, setting.Subscribe)
 	r := router.InitRouter()
 	router.InitPublicRouter(r, auth.Routers)
 	router.InitAuthRouter(r, user.Routers, setting.Routers, inventory.Routers, auth.AuthRouter)

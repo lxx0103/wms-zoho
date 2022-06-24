@@ -39,6 +39,7 @@ func Subscribe(conn *queue.Conn) {
 	conn.StartConsumer("PickingOrderPicked", "PickingOrderPicked", UpdateSOPicked)
 	conn.StartConsumer("SalesOrderUpdated", "SalesOrderUpdated", UpdateSalesOrder)
 	conn.StartConsumer("PurchaseOrderUpdated", "PurchaseOrderUpdated", UpdatePurchaseOrder)
+	conn.StartConsumer("ItemUpdated", "ItemUpdated", UpdateItem)
 }
 
 func AddTransaction(d amqp.Delivery) bool {
@@ -241,7 +242,7 @@ func UpdatePurchaseOrder(d amqp.Delivery) bool {
 	}
 	db := database.InitMySQL()
 	repo := NewInventoryRepository(db)
-	so, err := repo.GetSalesOrderByZohoID(purchaseUpdate.PurchaseorderID)
+	so, err := repo.GetPurchaseOrderByZohoID(purchaseUpdate.PurchaseorderID)
 	if err == nil {
 		err = repo.UpdatePurchaseorder(purchaseUpdate)
 		if err != nil {
@@ -276,4 +277,36 @@ type NewPackedToZoho struct {
 	SOID     string `json:"so_id"`
 	SKU      string `json:"sku"`
 	Quantity int64  `json:"quantity"`
+}
+
+func UpdateItem(d amqp.Delivery) bool {
+	if d.Body == nil {
+		return false
+	}
+	var itemUpdate ItemUpdate
+	err := json.Unmarshal(d.Body, &itemUpdate)
+	if err != nil {
+		fmt.Println("1")
+		fmt.Println(err)
+		return false
+	}
+	db := database.InitMySQL()
+	repo := NewInventoryRepository(db)
+	_, err = repo.GetItemByZohoID(itemUpdate.ItemID)
+	if err == nil {
+		err = repo.UpdateItem(itemUpdate)
+		if err != nil {
+			fmt.Println("22")
+			fmt.Println(err)
+			return false
+		}
+	} else {
+		err := repo.NewItem(itemUpdate)
+		if err != nil {
+			fmt.Println("222")
+			fmt.Println(err)
+			return false
+		}
+	}
+	return true
 }
