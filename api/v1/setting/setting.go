@@ -530,5 +530,5 @@ func ExportBarcode(c *gin.Context) {
 		response.ResponseError(c, "DatabaseError", err)
 		return
 	}
-	response.Response(c, path)
+	response.Response(c, "/download/"+newName)
 }
