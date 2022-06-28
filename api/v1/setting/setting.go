@@ -2,9 +2,13 @@ package setting
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"wms.com/core/config"
 	"wms.com/core/queue"
 	"wms.com/core/response"
 	"wms.com/service"
@@ -457,4 +461,74 @@ func GetNextTransactionLocation(c *gin.Context) {
 		return
 	}
 	response.Response(c, res)
+}
+
+// @Summary 批量新建条码
+// @Id 61
+// @Tags 条码管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param file formData file true  "上传文件"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /barcodes [POST]
+func NewBatchBarcode(c *gin.Context) {
+	uploaded, err := c.FormFile("file")
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	dest := config.ReadConfig("file.upload_path")
+	extension := filepath.Ext(uploaded.Filename)
+	if extension != ".xlsx" {
+		response.ResponseError(c, "文件格式错误", errors.New("AAA"))
+		return
+	}
+	newName := uuid.NewString() + extension
+	path := dest + newName
+	err = c.SaveUploadedFile(uploaded, path)
+	if err != nil {
+		response.ResponseError(c, "保存文件错误", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	settingService := NewSettingService()
+	err = settingService.BatchUpload(path, claims.Username)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "ok")
+}
+
+// @Summary 条码列表
+// @Id 62
+// @Tags 条码管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param code query string false "条码编码"
+// @Param sku query string false "SKU"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /barcodes/export [GET]
+func ExportBarcode(c *gin.Context) {
+	var filter BarcodeFilterNoPage
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	dest := config.ReadConfig("file.download_path")
+	extension := ".xlsx"
+	newName := uuid.NewString() + extension
+	path := dest + newName
+	settingService := NewSettingService()
+	err = settingService.ExportBarcode(filter, path)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, path)
 }

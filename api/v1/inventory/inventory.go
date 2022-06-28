@@ -879,7 +879,7 @@ func GetAdjustmentList(c *gin.Context) {
 // @Param code query string false "Pallet编码"
 // @Param level query string false "Pallet层"
 // @Param so_id query string false "销售订单id"
-// @Success 200 object response.ListRes{data=[]Pallet} 成功
+// @Success 200 object response.ListRes{data=[]SalesOrderPallet} 成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /pallets [GET]
 func GetPalletList(c *gin.Context) {
@@ -905,7 +905,7 @@ func GetPalletList(c *gin.Context) {
 // @Accept application/json
 // @Produce application/json
 // @Param pallet_info body PalletNew true "Pallet信息"
-// @Success 200 object response.SuccessRes{data=Pallet} 成功
+// @Success 200 object response.SuccessRes{data=SalesOrderPallet} 成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /pallets [POST]
 func NewPallet(c *gin.Context) {
@@ -963,7 +963,7 @@ func GetPalletByID(c *gin.Context) {
 // @Produce application/json
 // @Param id path int true "PalletID"
 // @Param pallet_info body PalletNew true "Pallet信息"
-// @Success 200 object response.SuccessRes{data=Pallet} 成功
+// @Success 200 object response.SuccessRes{data=SalesOrderPallet} 成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /pallets/:id [PUT]
 func UpdatePallet(c *gin.Context) {

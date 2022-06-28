@@ -3,12 +3,23 @@ definitions:
   auth.APINew:
     properties:
       enabled:
+        enum:
+        - 1
+        - 2
         type: integer
       method:
+        enum:
+        - post
+        - put
+        - get
         type: string
       name:
+        maxLength: 64
+        minLength: 1
         type: string
       route:
+        maxLength: 128
+        minLength: 1
         type: string
     required:
     - enabled
@@ -19,20 +30,37 @@ definitions:
   auth.MenuNew:
     properties:
       action:
+        maxLength: 64
+        minLength: 1
         type: string
       component:
+        maxLength: 255
+        minLength: 1
         type: string
       enabled:
+        enum:
+        - 1
+        - 2
         type: integer
       is_hidden:
+        enum:
+        - 1
+        - 2
         type: integer
       name:
+        maxLength: 64
+        minLength: 1
         type: string
       parent_id:
+        minimum: 0
         type: integer
       path:
+        maxLength: 128
+        minLength: 1
         type: string
       title:
+        maxLength: 64
+        minLength: 1
         type: string
     required:
     - enabled
@@ -53,10 +81,17 @@ definitions:
   auth.RoleNew:
     properties:
       enabled:
+        enum:
+        - 1
+        - 2
         type: integer
       name:
+        maxLength: 64
+        minLength: 1
         type: string
       priority:
+        maximum: 98
+        minimum: 1
         type: integer
     required:
     - enabled
@@ -66,8 +101,11 @@ definitions:
   auth.SigninRequest:
     properties:
       auth_type:
+        maximum: 9
+        minimum: 1
         type: integer
       credential:
+        minLength: 6
         type: string
       identifier:
         type: string
@@ -86,8 +124,11 @@ definitions:
   auth.SignupRequest:
     properties:
       auth_type:
+        maximum: 9
+        minimum: 1
         type: integer
       credential:
+        minLength: 6
         type: string
       email:
         type: string
@@ -258,23 +299,47 @@ definitions:
   inventory.PackingInfo:
     properties:
       barcode:
+        minLength: 1
         type: string
       quantity:
+        minimum: 1
         type: integer
       sales_order_id:
+        minimum: 1
         type: integer
     required:
     - barcode
     - quantity
     - sales_order_id
     type: object
+  inventory.PalletNew:
+    properties:
+      name:
+        minLength: 1
+        type: string
+      so_id:
+        minimum: 1
+        type: integer
+      status:
+        enum:
+        - 1
+        - 2
+        type: integer
+    required:
+    - name
+    - so_id
+    - status
+    type: object
   inventory.PickingInfo:
     properties:
       location_code:
+        minLength: 1
         type: string
       picking_order_id:
+        minimum: 1
         type: integer
       quantity:
+        minimum: 1
         type: integer
     required:
     - location_code
@@ -388,6 +453,7 @@ definitions:
       so_id:
         items:
           type: string
+        minItems: 1
         type: array
     required:
     - so_id
@@ -442,6 +508,8 @@ definitions:
         type: integer
       item_id:
         type: integer
+      line_item_id:
+        type: string
       name:
         type: string
       po_id:
@@ -462,10 +530,14 @@ definitions:
   inventory.ReceiveNew:
     properties:
       barcode:
+        maxLength: 64
+        minLength: 1
         type: string
       po_id:
+        minimum: 1
         type: integer
       quantity:
+        minimum: 1
         type: integer
     required:
     - barcode
@@ -493,6 +565,10 @@ definitions:
         type: string
       enabled:
         type: string
+      expected_shipment_date:
+        type: string
+      has_pallet:
+        type: boolean
       id:
         type: integer
       sales_name:
@@ -543,6 +619,25 @@ definitions:
       zoho_item_id:
         type: string
     type: object
+  inventory.SalesOrderPallet:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      so_id:
+        type: integer
+      status:
+        type: integer
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
   inventory.StockInRes:
     properties:
       is_completed:
@@ -559,7 +654,7 @@ definitions:
       location_code:
         type: string
       location_level:
-        type: integer
+        type: string
       quantity:
         type: integer
       shelf_code:
@@ -615,8 +710,7 @@ definitions:
     properties:
       count:
         type: integer
-      data:
-        type: object
+      data: {}
       page_id:
         type: integer
       page_size:
@@ -624,8 +718,7 @@ definitions:
     type: object
   response.SuccessRes:
     properties:
-      data:
-        type: object
+      data: {}
     type: object
   setting.Barcode:
     properties:
@@ -639,6 +732,8 @@ definitions:
         type: string
       id:
         type: integer
+      item_name:
+        type: string
       quantity:
         type: integer
       sku:
@@ -653,14 +748,24 @@ definitions:
   setting.BarcodeNew:
     properties:
       code:
+        maxLength: 64
+        minLength: 1
         type: string
       enabled:
+        enum:
+        - 1
+        - 2
         type: integer
       quantity:
+        minimum: 1
         type: integer
       sku:
+        maxLength: 64
+        minLength: 1
         type: string
       unit:
+        maxLength: 64
+        minLength: 1
         type: string
     required:
     - code
@@ -690,7 +795,7 @@ definitions:
       id:
         type: integer
       level:
-        type: integer
+        type: string
       quantity:
         type: integer
       shelf_id:
@@ -709,20 +814,33 @@ definitions:
       alert:
         type: integer
       capacity:
+        minimum: 1
         type: integer
       code:
+        maxLength: 64
+        minLength: 1
         type: string
       enabled:
+        enum:
+        - 1
+        - 2
         type: integer
       level:
-        type: integer
+        maxLength: 64
+        minLength: 1
+        type: string
       quantity:
         type: integer
       shelf_id:
+        minimum: 1
         type: integer
       sku:
+        maxLength: 64
+        minLength: 1
         type: string
       unit:
+        maxLength: 64
+        minLength: 1
         type: string
     required:
     - capacity
@@ -736,10 +854,13 @@ definitions:
   setting.LocationStockTransfer:
     properties:
       from:
+        minLength: 1
         type: string
       quantity:
+        minimum: 1
         type: integer
       to:
+        minLength: 1
         type: string
     required:
     - from
@@ -770,12 +891,21 @@ definitions:
   setting.ShelfNew:
     properties:
       code:
+        maxLength: 64
+        minLength: 1
         type: string
       enabled:
+        enum:
+        - 1
+        - 2
         type: integer
       level:
+        maximum: 8
+        minimum: 1
         type: integer
       location:
+        maxLength: 64
+        minLength: 1
         type: string
     required:
     - code
@@ -834,8 +964,10 @@ definitions:
       email:
         type: string
       name:
+        minLength: 2
         type: string
       role_id:
+        minimum: 1
         type: integer
     required:
     - email
@@ -1114,14 +1246,13 @@ paths:
     post:
       consumes:
       - application/json
-      operationId: "12"
+      operationId: "61"
       parameters:
-      - description: 条码信息
-        in: body
-        name: barcode_info
+      - description: 上传文件
+        in: formData
+        name: file
         required: true
-        schema:
-          $ref: '#/definitions/setting.BarcodeNew'
+        type: file
       produces:
       - application/json
       responses:
@@ -1132,13 +1263,13 @@ paths:
             - $ref: '#/definitions/response.SuccessRes'
             - properties:
                 data:
-                  $ref: '#/definitions/setting.Barcode'
+                  type: string
               type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/response.ErrorRes'
-      summary: 新建条码
+      summary: 批量新建条码
       tags:
       - 条码管理
   /barcodes/:id:
@@ -1204,6 +1335,39 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorRes'
       summary: 根据ID更新条码
+      tags:
+      - 条码管理
+  /barcodes/export:
+    get:
+      consumes:
+      - application/json
+      operationId: "62"
+      parameters:
+      - description: 条码编码
+        in: query
+        name: code
+        type: string
+      - description: SKU
+        in: query
+        name: sku
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 条码列表
       tags:
       - 条码管理
   /cancelpackings/:id:
@@ -1791,6 +1955,150 @@ paths:
       summary: 打包
       tags:
       - 捡货管理
+  /pallets:
+    get:
+      consumes:
+      - application/json
+      operationId: "57"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: Pallet编码
+        in: query
+        name: code
+        type: string
+      - description: Pallet层
+        in: query
+        name: level
+        type: string
+      - description: 销售订单id
+        in: query
+        name: so_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/inventory.SalesOrderPallet'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: Pallet列表
+      tags:
+      - Pallet管理
+    post:
+      consumes:
+      - application/json
+      operationId: "58"
+      parameters:
+      - description: Pallet信息
+        in: body
+        name: pallet_info
+        required: true
+        schema:
+          $ref: '#/definitions/inventory.PalletNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/inventory.SalesOrderPallet'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建Pallet
+      tags:
+      - Pallet管理
+  /pallets/:id:
+    get:
+      consumes:
+      - application/json
+      operationId: "59"
+      parameters:
+      - description: PalletID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/inventory.SalesOrderPallet'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取Pallet
+      tags:
+      - Pallet管理
+    put:
+      consumes:
+      - application/json
+      operationId: "60"
+      parameters:
+      - description: PalletID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Pallet信息
+        in: body
+        name: pallet_info
+        required: true
+        schema:
+          $ref: '#/definitions/inventory.PalletNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/inventory.SalesOrderPallet'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新Pallet
+      tags:
+      - Pallet管理
   /pickingorders:
     get:
       consumes:
@@ -2583,6 +2891,36 @@ paths:
       summary: 用户注册
       tags:
       - 用户权限
+  /transferfrom/:id:
+    get:
+      consumes:
+      - application/json
+      operationId: "56"
+      parameters:
+      - description: 转入货位ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 获取最早一个批次的货位
+      tags:
+      - 货位管理
   /transfers:
     get:
       consumes:

@@ -50,6 +50,8 @@ type SettingRepository interface {
 	GetBarcodeByCode(string) (*Barcode, error)
 	GetItemNameBySKU(sku string) (string, error)
 	CreateTransaction(t TransactionNew) error
+	BatchCreateBarcode([]BarcodeNew) error
+	GetBarcodeListNoPage(filter BarcodeFilterNoPage) ([]Barcode, error)
 }
 
 func (r *settingRepository) GetShelfByID(id int64) (Shelf, error) {
@@ -748,4 +750,83 @@ func (r *settingRepository) CreateTransaction(t TransactionNew) error {
 	}
 	tx.Commit()
 	return nil
+}
+func (r *settingRepository) BatchCreateBarcode(barcodes []BarcodeNew) error {
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for _, barcode := range barcodes {
+		var unit string
+		row := tx.QueryRow(`SELECT unit FROM i_items WHERE sku = ? LIMIT 1`, barcode.SKU)
+		err := row.Scan(&unit)
+		if err != nil {
+			msg := "Can't find item: " + barcode.SKU + "  "
+			return errors.New(msg)
+		}
+		var barcodeExist int
+		row2 := tx.QueryRow(`SELECT count(1) FROM s_barcodes WHERE code = ? LIMIT 1`, barcode.Code)
+		err = row2.Scan(&barcodeExist)
+		if err != nil {
+			return err
+		}
+		if barcodeExist != 0 {
+			_, err = tx.Exec(`
+			UPDATE s_barcodes set
+				sku = ?,
+				unit = ?,
+				quantity = ?,
+				updated = ?,
+				updated_by = ?
+			WHERE code = ?
+			`, barcode.SKU, unit, barcode.Quantity, time.Now(), barcode.User, barcode.Code)
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err = tx.Exec(`
+			INSERT INTO s_barcodes
+			(
+				code,
+				sku,
+				unit,
+				quantity,
+				enabled,
+				created,
+				created_by,
+				updated,
+				updated_by
+			)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`, barcode.Code, barcode.SKU, unit, barcode.Quantity, 1, time.Now(), barcode.User, time.Now(), barcode.User)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	tx.Commit()
+	return nil
+}
+
+func (r *settingRepository) GetBarcodeListNoPage(filter BarcodeFilterNoPage) ([]Barcode, error) {
+	where, args := []string{"1 = 1"}, []interface{}{}
+	if v := filter.Code; v != "" {
+		where, args = append(where, "b.code = ?"), append(args, v)
+	}
+	if v := filter.SKU; v != "" {
+		where, args = append(where, "b.sku = ?"), append(args, v)
+	}
+	var barcodes []Barcode
+	err := r.conn.Select(&barcodes, `
+		SELECT b.*, i.name as item_name  
+		FROM s_barcodes b
+		LEFT JOIN i_items i
+		ON b.sku = i.sku
+		WHERE `+strings.Join(where, " AND ")+`
+	`, args...)
+	if err != nil {
+		return nil, err
+	}
+	return barcodes, nil
 }

@@ -1,6 +1,11 @@
 package setting
 
 import (
+	"errors"
+	"fmt"
+	"strconv"
+
+	"github.com/tealeg/xlsx/v3"
 	"wms.com/core/database"
 )
 
@@ -35,6 +40,8 @@ type SettingService interface {
 	GetBarcodeList(BarcodeFilter) (int, []Barcode, error)
 	UpdateBarcode(int64, BarcodeNew) (Barcode, error)
 	GetBarcodeByCode(string) (*Barcode, error)
+	BatchUpload(string, string) error
+	ExportBarcode(BarcodeFilterNoPage, string) error
 }
 
 func (s *settingService) GetShelfByID(id int64) (Shelf, error) {
@@ -222,4 +229,99 @@ func (s *settingService) GetNextTransactionLocation(filter TranferFromFilter) (s
 		return "", err
 	}
 	return res, err
+}
+
+func (s *settingService) BatchUpload(path string, user string) error {
+	wb, err := xlsx.OpenFile(path)
+	if err != nil {
+		msg := "Open excel Error!"
+		return errors.New(err.Error() + msg)
+	}
+	sheetName := "barcodes"
+	sheet, ok := wb.Sheet[sheetName]
+	if !ok {
+		msg := "Open Sheet Error!Sheet name must be barcodes"
+		return errors.New(err.Error() + msg)
+	}
+	var barcodes []BarcodeNew
+	sheet.ForEachRow(func(r *xlsx.Row) error {
+		if r.GetCoordinate() == 0 {
+			return nil
+		}
+		var barcode BarcodeNew
+		barcode.User = user
+		r.ForEachCell(func(c *xlsx.Cell) error {
+			cn, rn := c.GetCoordinates()
+			switch cn {
+			case 0:
+				barcode.Code = c.Value
+			case 1:
+				quantity, err := strconv.Atoi(c.Value)
+				if err != nil {
+					msg := " Row " + strconv.Itoa(rn+1) + "Quantity error"
+					return errors.New(err.Error() + msg)
+				}
+				if quantity < 1 {
+					msg := " Row " + strconv.Itoa(rn+1) + "Quantity error"
+					return errors.New(err.Error() + msg)
+				}
+				barcode.Quantity = quantity
+			case 2:
+				barcode.SKU = c.Value
+			}
+			return err
+		})
+		barcodes = append(barcodes, barcode)
+		return err
+	})
+	db := database.InitMySQL()
+	repo := NewSettingRepository(db)
+	err = repo.BatchCreateBarcode(barcodes)
+	if err != nil {
+		msg := "Batch creation error!"
+		return errors.New(err.Error() + msg)
+	}
+	return nil
+}
+
+func (s *settingService) ExportBarcode(filter BarcodeFilterNoPage, path string) error {
+	wb := xlsx.NewFile()
+	sheet, err := wb.AddSheet("My New Sheet")
+	if err != nil {
+		msg := "Add Sheet Error!"
+		return errors.New(err.Error() + msg)
+	}
+	headerRow := sheet.AddRow()
+	header1 := headerRow.AddCell()
+	header1.SetValue("Barcode")
+	header2 := headerRow.AddCell()
+	header2.SetValue("SKU")
+	header3 := headerRow.AddCell()
+	header3.SetValue("ItemName")
+	header4 := headerRow.AddCell()
+	header4.SetValue("Quantity")
+	db := database.InitMySQL()
+	repo := NewSettingRepository(db)
+	list, err := repo.GetBarcodeListNoPage(filter)
+	if err != nil {
+		return err
+	}
+	for _, barcode := range list {
+		row := sheet.AddRow()
+		cell1 := row.AddCell()
+		cell1.SetValue(barcode.Code)
+		cell2 := row.AddCell()
+		cell2.SetValue(barcode.SKU)
+		cell3 := row.AddCell()
+		cell3.SetValue(barcode.ItemName)
+		cell4 := row.AddCell()
+		cell4.SetValue(barcode.Quantity)
+	}
+	err = wb.Save(path)
+	if err != nil {
+		return err
+	}
+	sheet.Close()
+	fmt.Println(path)
+	return nil
 }

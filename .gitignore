@@ -1,3 +1,5 @@
 config.toml
 ./log/
 .DS_Store
+./upload/
+*.xlsx

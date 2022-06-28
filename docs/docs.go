@@ -458,17 +458,15 @@ var doc = `{
                 "tags": [
                     "条码管理"
                 ],
-                "summary": "新建条码",
-                "operationId": "12",
+                "summary": "批量新建条码",
+                "operationId": "61",
                 "parameters": [
                     {
-                        "description": "条码信息",
-                        "name": "barcode_info",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/setting.BarcodeNew"
-                        }
+                        "type": "file",
+                        "description": "上传文件",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -483,7 +481,7 @@ var doc = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/setting.Barcode"
+                                            "type": "string"
                                         }
                                     }
                                 }
@@ -591,6 +589,61 @@ var doc = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/setting.Barcode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/barcodes/export": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "条码管理"
+                ],
+                "summary": "条码列表",
+                "operationId": "62",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "条码编码",
+                        "name": "code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "SKU",
+                        "name": "sku",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
                                         }
                                     }
                                 }
@@ -1551,6 +1604,241 @@ var doc = `{
                                     "properties": {
                                         "data": {
                                             "type": "integer"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/pallets": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pallet管理"
+                ],
+                "summary": "Pallet列表",
+                "operationId": "57",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pallet编码",
+                        "name": "code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pallet层",
+                        "name": "level",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "销售订单id",
+                        "name": "so_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/inventory.SalesOrderPallet"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pallet管理"
+                ],
+                "summary": "新建Pallet",
+                "operationId": "58",
+                "parameters": [
+                    {
+                        "description": "Pallet信息",
+                        "name": "pallet_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/inventory.PalletNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/inventory.SalesOrderPallet"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/pallets/:id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pallet管理"
+                ],
+                "summary": "根据ID获取Pallet",
+                "operationId": "59",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "PalletID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/inventory.SalesOrderPallet"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pallet管理"
+                ],
+                "summary": "根据ID更新Pallet",
+                "operationId": "60",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "PalletID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Pallet信息",
+                        "name": "pallet_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/inventory.PalletNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/inventory.SalesOrderPallet"
                                         }
                                     }
                                 }
@@ -2861,6 +3149,56 @@ var doc = `{
                 }
             }
         },
+        "/transferfrom/:id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "货位管理"
+                ],
+                "summary": "获取最早一个批次的货位",
+                "operationId": "56",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "转入货位ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/transfers": {
             "get": {
                 "consumes": [
@@ -3171,16 +3509,29 @@ var doc = `{
             ],
             "properties": {
                 "enabled": {
-                    "type": "integer"
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
                 },
                 "method": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "post",
+                        "put",
+                        "get"
+                    ]
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 },
                 "route": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 1
                 }
             }
         },
@@ -3195,28 +3546,47 @@ var doc = `{
             ],
             "properties": {
                 "action": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 },
                 "component": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
                 },
                 "enabled": {
-                    "type": "integer"
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
                 },
                 "is_hidden": {
-                    "type": "integer"
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 },
                 "parent_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "path": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 1
                 },
                 "title": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 }
             }
         },
@@ -3243,13 +3613,21 @@ var doc = `{
             ],
             "properties": {
                 "enabled": {
-                    "type": "integer"
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 },
                 "priority": {
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 98,
+                    "minimum": 1
                 }
             }
         },
@@ -3262,10 +3640,13 @@ var doc = `{
             ],
             "properties": {
                 "auth_type": {
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 9,
+                    "minimum": 1
                 },
                 "credential": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 6
                 },
                 "identifier": {
                     "type": "string"
@@ -3294,10 +3675,13 @@ var doc = `{
             ],
             "properties": {
                 "auth_type": {
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 9,
+                    "minimum": 1
                 },
                 "credential": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 6
                 },
                 "email": {
                     "type": "string"
@@ -3551,13 +3935,41 @@ var doc = `{
             ],
             "properties": {
                 "barcode": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                 },
                 "quantity": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "sales_order_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "inventory.PalletNew": {
+            "type": "object",
+            "required": [
+                "name",
+                "so_id",
+                "status"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "so_id": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
                 }
             }
         },
@@ -3570,13 +3982,16 @@ var doc = `{
             ],
             "properties": {
                 "location_code": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                 },
                 "picking_order_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "quantity": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         },
@@ -3743,6 +4158,7 @@ var doc = `{
             "properties": {
                 "so_id": {
                     "type": "array",
+                    "minItems": 1,
                     "items": {
                         "type": "string"
                     }
@@ -3825,6 +4241,9 @@ var doc = `{
                 "item_id": {
                     "type": "integer"
                 },
+                "line_item_id": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -3860,13 +4279,17 @@ var doc = `{
             ],
             "properties": {
                 "barcode": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 },
                 "po_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "quantity": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         },
@@ -3901,6 +4324,12 @@ var doc = `{
                 },
                 "enabled": {
                     "type": "string"
+                },
+                "expected_shipment_date": {
+                    "type": "string"
+                },
+                "has_pallet": {
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "integer"
@@ -3978,6 +4407,35 @@ var doc = `{
                 }
             }
         },
+        "inventory.SalesOrderPallet": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "so_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
         "inventory.StockInRes": {
             "type": "object",
             "properties": {
@@ -4002,7 +4460,7 @@ var doc = `{
                     "type": "string"
                 },
                 "location_level": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "quantity": {
                     "type": "integer"
@@ -4088,9 +4546,7 @@ var doc = `{
                 "count": {
                     "type": "integer"
                 },
-                "data": {
-                    "type": "object"
-                },
+                "data": {},
                 "page_id": {
                     "type": "integer"
                 },
@@ -4102,9 +4558,7 @@ var doc = `{
         "response.SuccessRes": {
             "type": "object",
             "properties": {
-                "data": {
-                    "type": "object"
-                }
+                "data": {}
             }
         },
         "setting.Barcode": {
@@ -4124,6 +4578,9 @@ var doc = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "item_name": {
+                    "type": "string"
                 },
                 "quantity": {
                     "type": "integer"
@@ -4153,19 +4610,30 @@ var doc = `{
             ],
             "properties": {
                 "code": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 },
                 "enabled": {
-                    "type": "integer"
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
                 },
                 "quantity": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "sku": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 },
                 "unit": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 }
             }
         },
@@ -4200,7 +4668,7 @@ var doc = `{
                     "type": "integer"
                 },
                 "level": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "quantity": {
                     "type": "integer"
@@ -4238,28 +4706,42 @@ var doc = `{
                     "type": "integer"
                 },
                 "capacity": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "code": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 },
                 "enabled": {
-                    "type": "integer"
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
                 },
                 "level": {
-                    "type": "integer"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 },
                 "quantity": {
                     "type": "integer"
                 },
                 "shelf_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "sku": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 },
                 "unit": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 }
             }
         },
@@ -4272,13 +4754,16 @@ var doc = `{
             ],
             "properties": {
                 "from": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                 },
                 "quantity": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "to": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                 }
             }
         },
@@ -4324,16 +4809,26 @@ var doc = `{
             ],
             "properties": {
                 "code": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 },
                 "enabled": {
-                    "type": "integer"
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
                 },
                 "level": {
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 8,
+                    "minimum": 1
                 },
                 "location": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 }
             }
         },
@@ -4419,10 +4914,12 @@ var doc = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 2
                 },
                 "role_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         }
@@ -4480,5 +4977,5 @@ func (s *s) ReadDoc() string {
 }
 
 func init() {
-	swag.Register(swag.Name, &s{})
+	swag.Register("swagger", &s{})
 }

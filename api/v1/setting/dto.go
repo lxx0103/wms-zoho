@@ -54,6 +54,11 @@ type BarcodeFilter struct {
 	PageSize int    `form:"page_size" binding:"required,min=5,max=200"`
 }
 
+type BarcodeFilterNoPage struct {
+	Code string `form:"code" binding:"omitempty,max=64,min=1"`
+	SKU  string `form:"sku" binding:"omitempty,max=64,min=1"`
+}
+
 type BarcodeNew struct {
 	Code     string `json:"code" binding:"required,min=1,max=64"`
 	SKU      string `json:"sku" binding:"required,min=1,max=64"`
