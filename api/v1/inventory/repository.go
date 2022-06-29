@@ -1672,6 +1672,7 @@ func (r *inventoryRepository) UpdateSalesorder(info SalesorderUpdate) error {
 		updated = ?,
 		updated_by = ? 
 		WHERE zoho_so_id = ?
+		AND status not in ("PACKED","COMPLETED")
 	`, info.Date, info.CustomerID, info.CustomerName, info.Status, info.SalespersonName, info.ExpectedShipmentDate, time.Now(), "SYSTEM", info.SalesorderID)
 	if err != nil {
 		return err

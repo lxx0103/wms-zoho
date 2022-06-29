@@ -200,11 +200,9 @@ func UpdateSalesOrder(d amqp.Delivery) bool {
 		fmt.Println(err)
 		return false
 	}
-	fmt.Println(salesorderUpdate.SalesorderID, "---===---")
 	db := database.InitMySQL()
 	repo := NewInventoryRepository(db)
 	so, err := repo.GetSalesOrderByZohoID(salesorderUpdate.SalesorderID)
-	fmt.Println("---", so, "---")
 	if err == nil {
 		err = repo.UpdateSalesorder(salesorderUpdate)
 		if err != nil {
