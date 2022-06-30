@@ -119,16 +119,18 @@ type SalesOrderPallet struct {
 	UpdatedBy string    `db:"updated_by" json:"updated_by"`
 }
 type PickingOrder struct {
-	ID          int64     `db:"id" json:"id"`
-	Name        string    `db:"name" json:"name"`
-	SalesOrders string    `db:"sales_orders" json:"sales_orders"`
-	PickingDate time.Time `db:"picking_date" json:"picking_date"`
-	Status      string    `db:"status" json:"status"`
-	Enabled     string    `db:"enabled" json:"enabled"`
-	Created     time.Time `db:"created" json:"created"`
-	CreatedBy   string    `db:"created_by" json:"created_by"`
-	Updated     time.Time `db:"updated" json:"updated"`
-	UpdatedBy   string    `db:"updated_by" json:"updated_by"`
+	ID           int64     `db:"id" json:"id"`
+	Name         string    `db:"name" json:"name"`
+	SalesOrders  string    `db:"sales_orders" json:"sales_orders"`
+	PickingDate  time.Time `db:"picking_date" json:"picking_date"`
+	AssignedTo   int64     `db:"assigned_to" json:"assigned_to"`
+	AssignedName string    `db:"assigned_name" json:"assigned_name"`
+	Status       string    `db:"status" json:"status"`
+	Enabled      string    `db:"enabled" json:"enabled"`
+	Created      time.Time `db:"created" json:"created"`
+	CreatedBy    string    `db:"created_by" json:"created_by"`
+	Updated      time.Time `db:"updated" json:"updated"`
+	UpdatedBy    string    `db:"updated_by" json:"updated_by"`
 }
 
 type PickingOrderItem struct {

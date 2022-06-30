@@ -550,7 +550,7 @@ func NewPickingOrder(c *gin.Context) {
 	}
 	inventoryService := NewInventoryService()
 	claims := c.MustGet("claims").(*service.CustomClaims)
-	pickingID, err := inventoryService.CreatePickingOrder(salesOrders.SOID, claims.Username)
+	pickingID, err := inventoryService.CreatePickingOrder(salesOrders, claims.Username)
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
 		return

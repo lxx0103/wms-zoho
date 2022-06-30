@@ -138,6 +138,7 @@ type PickingOrderFilter struct {
 	OrderNumber string `form:"order_number" binding:"omitempty,max=64,min=1"`
 	UserName    string `form:"user_name" binding:"omitempty,max=64,min=1"`
 	OrderDate   string `form:"order_date" binding:"omitempty,datetime=2006-01-02"`
+	AssignedTo  int64  `form:"assigned_to" binding:"omitempty,min=1"`
 	PageId      int    `form:"page_id" binding:"required,min=1"`
 	PageSize    int    `form:"page_size" binding:"required,min=5,max=200"`
 }
@@ -163,7 +164,8 @@ type FilterPickingOrderDetail struct {
 }
 
 type PickingOrderNew struct {
-	SOID []string `json:"so_id" binding:"required,min=1"`
+	UserID int64    `json:"user_id" binding:"required,min=1"`
+	SOID   []string `json:"so_id" binding:"required,min=1"`
 }
 type PickingOrderDetailNew struct {
 	POID           int64  `json:"picking_order_id"`

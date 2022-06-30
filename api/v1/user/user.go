@@ -27,6 +27,7 @@ func GetUserList(c *gin.Context) {
 	var filter UserFilter
 	if err := c.ShouldBindQuery(&filter); err != nil {
 		response.ResponseError(c, "BindingError", err)
+		return
 	}
 	userService := NewUserService()
 	count, list, err := userService.GetUserList(filter)

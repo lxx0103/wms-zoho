@@ -53,7 +53,7 @@ type InventoryRepository interface {
 	GetPickingOrderList(filter PickingOrderFilter) ([]PickingOrder, error)
 	FilterPickingOrderItem(filter FilterPickingOrderItem) (*[]PickingOrderItem, error)
 	FilterPickingOrderDetail(filter FilterPickingOrderDetail) (*[]PickingOrderDetail, error)
-	CreatePickingOrder([]string, string) (int64, error)
+	CreatePickingOrder(PickingOrderNew, string) (int64, error)
 	CreatePickingOrderDetail(PickingOrderDetailNew) (int64, error)
 	CreatePickingTransaction(PickingTransactionNew) (int64, bool, error)
 	CreatePackingTransaction(PackingTransactionNew) (int64, error)
@@ -565,22 +565,27 @@ func (r *inventoryRepository) GetPickingOrderCount(filter PickingOrderFilter) (i
 func (r *inventoryRepository) GetPickingOrderList(filter PickingOrderFilter) ([]PickingOrder, error) {
 	where, args := []string{"1 = 1"}, []interface{}{}
 	if v := filter.OrderNumber; v != "" {
-		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+		where, args = append(where, "po.name like ?"), append(args, "%"+v+"%")
 	}
 	if v := filter.UserName; v != "" {
-		where, args = append(where, "created_by like ?"), append(args, "%"+v+"%")
+		where, args = append(where, "po.created_by like ?"), append(args, "%"+v+"%")
 	}
 	if v := filter.OrderDate; v != "" {
-		where, args = append(where, "picking_date = ?"), append(args, v)
+		where, args = append(where, "po.picking_date = ?"), append(args, v)
+	}
+	if v := filter.AssignedTo; v != 0 {
+		where, args = append(where, "po.assigned_to = ?"), append(args, v)
 	}
 	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
 	args = append(args, filter.PageSize)
 	var pickingOrders []PickingOrder
 	err := r.conn.Select(&pickingOrders, `
-		SELECT * 
-		FROM i_picking_orders 
+		SELECT po.*, up.name as assigned_name 
+		FROM i_picking_orders po
+		LEFT JOIN user_profiles up
+		ON po.assigned_to = up.id
 		WHERE `+strings.Join(where, " AND ")+`
-		ORDER BY ID DESC
+		ORDER BY po.ID DESC
 		LIMIT ?, ?
 	`, args...)
 	if err != nil {
@@ -632,7 +637,7 @@ func (r *inventoryRepository) FilterPickingOrderDetail(filter FilterPickingOrder
 	return &details, nil
 }
 
-func (r *inventoryRepository) CreatePickingOrder(ids []string, user string) (int64, error) {
+func (r *inventoryRepository) CreatePickingOrder(info PickingOrderNew, user string) (int64, error) {
 	tx, err := r.conn.Begin()
 	if err != nil {
 		return 0, err
@@ -644,6 +649,7 @@ func (r *inventoryRepository) CreatePickingOrder(ids []string, user string) (int
 			name,
 			sales_orders,
 			picking_date,
+			assigned_to,
 			status,
 			enabled,
 			created,
@@ -651,8 +657,8 @@ func (r *inventoryRepository) CreatePickingOrder(ids []string, user string) (int
 			updated,
 			updated_by
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, time.Now().Format("2006-01-02 15:04:05")+"_by_"+user, strings.Join(ids[:], ","), time.Now().Format("2006-01-02"), "TOPICK", 1, time.Now(), user, time.Now(), user)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, time.Now().Format("2006-01-02 15:04:05")+"_by_"+user, strings.Join(info.SOID[:], ","), time.Now().Format("2006-01-02"), info.UserID, "TOPICK", 1, time.Now(), user, time.Now(), user)
 	if err != nil {
 		return 0, err
 	}
@@ -690,7 +696,7 @@ func (r *inventoryRepository) CreatePickingOrder(ids []string, user string) (int
 		?,
 		?
 		FROM i_sales_order_items 
-		WHERE so_id in (`+strings.Join(ids[:], ",")+`) group by item_id,sku,zoho_item_id,name
+		WHERE so_id in (`+strings.Join(info.SOID[:], ",")+`) group by item_id,sku,zoho_item_id,name
 	`, pickingID, time.Now(), user, time.Now(), user)
 	if err != nil {
 		return 0, err
@@ -700,7 +706,7 @@ func (r *inventoryRepository) CreatePickingOrder(ids []string, user string) (int
 		status = "PICKING",
 		updated = ?,
 		updated_by = ? 
-		WHERE id in (`+strings.Join(ids[:], ",")+`)
+		WHERE id in (`+strings.Join(info.SOID[:], ",")+`)
 	`, time.Now(), user)
 	if err != nil {
 		return 0, err

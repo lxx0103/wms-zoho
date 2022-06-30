@@ -3998,6 +3998,9 @@ var doc = `{
         "inventory.PickingOrder": {
             "type": "object",
             "properties": {
+                "assigned_to": {
+                    "type": "integer"
+                },
                 "created": {
                     "type": "string"
                 },
@@ -4153,7 +4156,8 @@ var doc = `{
         "inventory.PickingOrderNew": {
             "type": "object",
             "required": [
-                "so_id"
+                "so_id",
+                "user_id"
             ],
             "properties": {
                 "so_id": {
@@ -4162,6 +4166,10 @@ var doc = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "user_id": {
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         },

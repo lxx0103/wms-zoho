@@ -348,6 +348,8 @@ definitions:
     type: object
   inventory.PickingOrder:
     properties:
+      assigned_to:
+        type: integer
       created:
         type: string
       created_by:
@@ -455,8 +457,12 @@ definitions:
           type: string
         minItems: 1
         type: array
+      user_id:
+        minimum: 1
+        type: integer
     required:
     - so_id
+    - user_id
     type: object
   inventory.PickingResponse:
     properties:
